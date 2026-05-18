@@ -9,3 +9,8 @@
 - **Hook Version**: 1.02
 - **Date**: 18-05-2026 11:17
 - **Prompt**: i want everything to be in the flask app. I do not want API gluing
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 18-05-2026 11:22
+- **Prompt**: put this in phases like the original one
