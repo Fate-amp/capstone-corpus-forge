@@ -7,3 +7,6 @@
 ### 18-05-2026 11:22
 - **Prompt**: put this in phases like the original one
 
+### 18-05-2026 11:26
+- **Prompt**: Now based on what you suggested us, create the whole skeleton of the project, with TODOs and clear docstrings so that the developer is clear on how to implement it
+
