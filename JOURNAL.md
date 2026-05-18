@@ -121,3 +121,64 @@ Teams can now split work:
 - **Hook Version**: 1.02
 - **Date**: 18-05-2026 11:44
 - **Prompt**: Revise the daily checklist from day 2 so that person A works mainly on frontend with a side of AI/embeddings, Person B mainly AI/embeddings with a side of backend, and Person C gets backend and a side of frontend. Make sure that whatever they work on mesh together properly
+
+---
+
+### **Interaction Summary: Role-Based Daily Checklist Revision (Days 2-5)**
+- **Date**: 18-05-2026 11:45
+- **Status**: COMPLETED ✅
+- **Key Changes**:
+
+#### **New Role Assignments** (replacing original A/B/C roles):
+- **Person A**: **Frontend Main** + AI/Embeddings Side
+- **Person B**: **AI/Embeddings Main** + Backend Side
+- **Person C**: **Backend Main** + Frontend Side
+
+#### **Files Modified**:
+- `DAILY_CHECKLIST.md` - Days 2, 3, 4, 5 revised
+
+#### **Day 2: Document Upload & Management** (Revised)
+- **Person A (Frontend)**: Upload modal UI, file input form, styling, clickable items, delete button, event listeners → **Side**: Understand text extraction flow
+- **Person B (AI/Embeddings)**: Verify `document_processor.extract_text()` works for PDF/TXT → **Side**: Review backend route structure
+- **Person C (Backend)**: `upload_document()` & `delete_document()` routes, file handling, DB ops → **Side**: Ensure frontend integration works end-to-end
+
+#### **Day 3: Embeddings & Vector Search** (Revised)
+- **Person B (AI/Embeddings)**: Core work - Implement `EmbeddingsService` (chunking, embedding, retrieval, deletion)
+- **Person C (Backend)**: Integrate embedding calls in upload/delete routes → **Side**: Add visual feedback requirements for frontend
+- **Person A (Frontend)**: Add embedding status UI with loading spinner → **Side**: Test chunking/retrieval quality with test queries
+
+#### **Day 4: AI Chat & Streaming** (Revised)
+- **Person B (AI/Embeddings)**: Core work - Implement `AIAgent` (init, system prompt, token counting, streaming)
+- **Person C (Backend)**: Implement `/chat` route connecting embeddings to AI agent → **Side**: Test route with curl before frontend integration
+- **Person A (Frontend)**: Build chat UI with streaming display → **Side**: Understand token counting and help debug context retrieval
+
+#### **Day 5: Settings & Usage Dashboard** (Revised)
+- **Person A (Frontend)**: Settings form sliders, real-time display, form submission → **Side**: Test that temperature/tone changes affect AI responses
+- **Person C (Backend)**: Implement `/update-settings` and `/get-usage-stats` routes → **Side**: Verify settings form data flows correctly
+- **Person B (AI/Embeddings)**: Validate settings integration, verify token tracking, test parameter impact on responses
+
+#### **Work Mesh Strategy**:
+1. **Day 2**: B verifies extraction → C receives extracted text → A displays it in UI
+2. **Day 3**: B chunks/embeds → C integrates → A shows status feedback
+3. **Day 4**: B builds AI agent → C connects to route → A streams responses
+4. **Day 5**: A builds settings UI → C routes to DB → B validates parameters affect AI
+
+#### **Integration Touchpoints**:
+- **B→C**: AI/embeddings functions → backend routes
+- **C→A**: API responses → frontend display
+- **A→B**: UI parameters (temperature, tone, query) → AI behavior
+- **Side tasks**: Create handoff verification points (A tests B's extraction, C tests A's forms, etc.)
+
+#### **Testing Validation**:
+Each day includes cross-functional testing to ensure tasks mesh:
+- Day 2: Upload file → B verifies extraction → C saves → A displays in sidebar
+- Day 3: Upload file → B embeds → C integrates → A shows status
+- Day 4: Submit query → C routes → B generates response → A streams to UI
+- Day 5: Change settings → A submits → C saves → B verifies impact on response
+
+#### **Rationale**:
+- Leverages each person's expertise (A=UI design, B=AI/ML concepts, C=backend logic)
+- Side tasks ensure awareness of adjacent systems (prevents integration surprises)
+- Natural workflow: Person B owns core AI logic, Person C pipes it through routes, Person A consumes it in UI
+- Parallel work enabled by clear interfaces (B produces functions, C calls them, A displays results)
+- Daily integration points reduce late-stage rework
