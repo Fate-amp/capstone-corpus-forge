@@ -1,0 +1,119 @@
+<!-- 
+    Settings Panel Partial
+    
+    Allows users to adjust:
+    - Temperature (0.0 - 2.0): Creativity level
+    - Top P (0.0 - 1.0): Diversity of responses
+    - Audience Level: Who should understand the answer?
+    - Tone: How should responses sound?
+    - Model Choice: Which AI model to use
+    - Max Tokens: Maximum response length
+    
+    TODO: Day 5 Implementation
+    - Form submission to POST /update-settings
+    - Validation of numeric ranges
+    - Real-time preview of settings
+    - Reset to defaults button
+    - Save confirmation
+    - Store settings in database
+-->
+
+<form id="settings-form" method="POST" action="{{ url_for('update_settings') }}">
+    <div class="form-group">
+        <label for="temperature">Temperature (Creativity)</label>
+        <div class="slider-group">
+            <input
+                type="range"
+                id="temperature"
+                name="temperature"
+                min="0"
+                max="2"
+                step="0.1"
+                value="{{ settings.temperature if settings else 0.7 }}"
+                class="slider"
+            >
+            <span id="temperature-display" class="slider-value">{{ settings.temperature if settings else 0.7 }}</span>
+        </div>
+        <small>Lower = more consistent, Higher = more creative</small>
+    </div>
+
+    <div class="form-group">
+        <label for="top_p">Top P (Diversity)</label>
+        <div class="slider-group">
+            <input
+                type="range"
+                id="top_p"
+                name="top_p"
+                min="0"
+                max="1"
+                step="0.05"
+                value="{{ settings.top_p if settings else 0.9 }}"
+                class="slider"
+            >
+            <span id="top_p-display" class="slider-value">{{ settings.top_p if settings else 0.9 }}</span>
+        </div>
+        <small>Controls diversity in response generation</small>
+    </div>
+
+    <div class="form-group">
+        <label for="audience_level">Audience Level</label>
+        <select id="audience_level" name="audience_level" class="form-select">
+            <option value="beginner" {% if settings.audience_level == 'beginner' %}selected{% endif %}>
+                Beginner (Simple explanations)
+            </option>
+            <option value="intermediate" {% if settings.audience_level == 'intermediate' %}selected{% endif %}>
+                Intermediate (Balanced)
+            </option>
+            <option value="expert" {% if settings.audience_level == 'expert' %}selected{% endif %}>
+                Expert (Technical depth)
+            </option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="tone">Response Tone</label>
+        <select id="tone" name="tone" class="form-select">
+            <option value="formal" {% if settings.tone == 'formal' %}selected{% endif %}>Formal</option>
+            <option value="casual" {% if settings.tone == 'casual' %}selected{% endif %}>Casual</option>
+            <option value="technical" {% if settings.tone == 'technical' %}selected{% endif %}>Technical</option>
+            <option value="friendly" {% if settings.tone == 'friendly' %}selected{% endif %}>Friendly</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="max_tokens_per_response">Max Response Length</label>
+        <input
+            type="number"
+            id="max_tokens_per_response"
+            name="max_tokens_per_response"
+            value="{{ settings.max_tokens_per_response if settings else 1000 }}"
+            min="100"
+            max="4000"
+            step="100"
+            class="form-input"
+        >
+        <small>Maximum tokens in response (1 token ≈ 4 characters)</small>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-block">Save Settings</button>
+    </div>
+</form>
+
+<script>
+    // TODO: Day 5 - Implement real-time slider value display
+    
+    const temperatureSlider = document.getElementById('temperature');
+    const temperatureDisplay = document.getElementById('temperature-display');
+    
+    const topPSlider = document.getElementById('top_p');
+    const topPDisplay = document.getElementById('top_p-display');
+    
+    temperatureSlider.addEventListener('input', function() {
+        temperatureDisplay.textContent = this.value;
+    });
+    
+    topPSlider.addEventListener('input', function() {
+        topPDisplay.textContent = this.value;
+    });
+</script>

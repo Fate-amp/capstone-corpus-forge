@@ -1,0 +1,107 @@
+<!-- 
+    Main Dashboard Template
+    
+    Layout:
+    - Left sidebar: Document list
+    - Center: Chat interface
+    - Right panel: Settings + Usage stats
+    
+    TODO: Implement responsive layout (mobile-friendly)
+    TODO: Add loading indicators for async operations
+    TODO: Add toast notifications for success/error messages
+    TODO: Add collapsible panels for mobile
+-->
+
+{% extends "base.html" %}
+
+{% block title %}Corpus Forge - Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- LEFT SIDEBAR: Document Manager -->
+    <aside class="sidebar documents-sidebar">
+        <div class="sidebar-header">
+            <h2>Documents</h2>
+            <button class="btn btn-primary btn-small" id="upload-btn">+ Upload</button>
+        </div>
+        
+        <div class="documents-list">
+            {% include 'partials/documents_sidebar.html' %}
+        </div>
+    </aside>
+
+    <!-- CENTER: Chat Interface -->
+    <main class="main-content chat-section">
+        <div class="chat-header">
+            <h2 id="selected-doc-title">Select a document to begin</h2>
+        </div>
+        
+        <div class="chat-container">
+            {% include 'partials/chat_box.html' %}
+        </div>
+    </main>
+
+    <!-- RIGHT PANEL: Settings + Usage -->
+    <aside class="sidebar right-sidebar">
+        <div class="sidebar-header">
+            <h2>Settings & Usage</h2>
+        </div>
+        
+        <!-- Settings Panel -->
+        <div class="settings-panel">
+            {% include 'partials/settings_panel.html' %}
+        </div>
+        
+        <!-- Usage Dashboard -->
+        <div class="usage-stats">
+            {% include 'partials/usage_stats.html' %}
+        </div>
+    </aside>
+</div>
+
+<!-- Hidden Upload Form Modal -->
+<!-- 
+    TODO: Day 2 - Create file upload modal
+    - Accept PDF, TXT, or code files
+    - Show file size limit
+    - Display upload progress
+    - Show error messages
+-->
+<div id="upload-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Upload Document</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="upload-form" method="POST" action="{{ url_for('upload_document') }}" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file-input">Choose file (PDF, TXT, or Code):</label>
+                <input type="file" id="file-input" name="file" required>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // TODO: Day 2 - Implement upload modal functionality
+    // - Show/hide modal
+    // - Handle form submission
+    // - Show loading state
+    // - Handle errors
+    
+    document.getElementById('upload-btn').addEventListener('click', function() {
+        document.getElementById('upload-modal').classList.remove('hidden');
+    });
+    
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.getElementById('upload-modal').classList.add('hidden');
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Corpus Forge{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">Corpus Forge</h1>
+                <p class="app-subtitle">AI-Powered Document Exploration</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="app-body">
+            {% block content %}
+            <!-- Child templates override this -->
+            {% endblock %}
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 Corpus Forge | Three First-Year CS Students</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chat-stream.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
