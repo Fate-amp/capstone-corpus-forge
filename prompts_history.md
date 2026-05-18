@@ -10,3 +10,6 @@
 ### 18-05-2026 11:26
 - **Prompt**: Now based on what you suggested us, create the whole skeleton of the project, with TODOs and clear docstrings so that the developer is clear on how to implement it
 
+### 18-05-2026 11:48
+- **Prompt**: complete the readme so that my teammates know how to install venv and set up the environment with the requirements.txt
+
