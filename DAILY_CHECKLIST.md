@@ -33,49 +33,61 @@
 
 ### ✅ DAY 2: Document Upload & Management (6 hours)
 
-**Frontend Person (B)**
+**Person A (Frontend Main)**
 - [ ] Implement upload modal in `dashboard.html` (show/hide)
-- [ ] Implement file input form
-- [ ] Style upload button and modal
-- [ ] Make document items clickable (add visual selection)
+- [ ] Implement file input form with proper file type validation feedback
+- [ ] Style upload button and modal (CSS in `static/css/main.css`)
+- [ ] Make document items clickable (add visual selection state)
 - [ ] Implement delete button with confirmation dialog
 - [ ] Add event listeners for:
   - [ ] Upload button → show modal
   - [ ] Document click → select document
-  - [ ] Delete button → confirm delete
+  - [ ] Delete button → confirm delete + send to backend
+- [ ] **Side Task (AI/Embeddings)**: Understand how extracted text will be chunked and embedded on Day 3. Review `document_processor.py` to see what text extraction returns.
 
-**Backend Person (A)**
+**Person B (AI/Embeddings Main)**
+- [ ] Test `document_processor.extract_text()` with sample PDFs and text files:
+  - [ ] Verify text extraction works for `.pdf` files
+  - [ ] Verify text extraction works for `.txt` files
+  - [ ] Check that returned text is clean (no formatting artifacts)
+  - [ ] Add debug logs to confirm output
+- [ ] Add TODO comments in `app.py` upload_document() for Day 3:
+  - [ ] Mark where embeddings will be called
+  - [ ] Document the expected flow: upload → extract text → embed text
+- [ ] **Side Task (Backend)**: Understand the upload route structure. Review what data needs to flow from frontend form to backend route (file, user inputs, etc.).
+
+**Person C (Backend Main)**
 - [ ] Implement `upload_document()` in `app.py`:
-  - [ ] Validate file exists and has allowed extension
-  - [ ] Save file to `static/uploads/` with secure filename
-  - [ ] Extract text using `document_processor`
-  - [ ] Generate preview text
-  - [ ] Create Document DB entry
-  - [ ] Redirect to dashboard
+  - [ ] Get file from request
+  - [ ] Validate file exists and has allowed extension (.pdf, .txt)
+  - [ ] Save file to `static/uploads/` with secure filename (use `werkzeug.utils.secure_filename`)
+  - [ ] Extract text using `document_processor.extract_text(file_path)`
+  - [ ] Generate preview text (first 150 characters)
+  - [ ] Create Document DB entry with filename, text, preview
+  - [ ] Return redirect to dashboard
 - [ ] Implement `delete_document()` in `app.py`:
   - [ ] Query Document by ID
-  - [ ] Delete file from disk
+  - [ ] Delete file from `static/uploads/`
   - [ ] Delete Document from database
-  - [ ] Redirect to dashboard
-- [ ] Test both upload and delete flows
+  - [ ] Return redirect to dashboard
+- [ ] Test both routes with actual file submissions
+- [ ] **Side Task (Frontend)**: Verify upload form works end-to-end. Test that files are properly received and stored. Ensure error responses display correctly to Person A's frontend.
 
-**Person C** (AI/embeddings)
-- [ ] Add TODO comment for Day 3 embeddings in upload function
-- [ ] Verify `document_processor.py` functions work correctly
-
-**Testing**
-- [ ] Manual: Upload PDF → check sidebar
-- [ ] Manual: Upload TXT → check sidebar
-- [ ] Manual: Invalid file type → rejected
+**Testing Checklist** (All three collaborate)
+- [ ] Manual: Upload PDF → appears in sidebar
+- [ ] Manual: Upload TXT → appears in sidebar
+- [ ] Manual: Invalid file type (.docx, .zip) → rejected with message
 - [ ] Manual: Delete document → gone from sidebar and disk
+- [ ] Manual: Upload same file twice → second gets unique filename, both appear
+- [ ] Manual: File with spaces/special chars in name → stored securely
 
-**Deliverable**: Upload/delete documents working. Files saved to disk. DB entries created/deleted.
+**Deliverable**: Upload/delete documents working. Files saved to disk with secure names. DB entries created/deleted. Text extraction verified to work for embedding on Day 3.
 
 ---
 
 ### ✅ DAY 3: Embeddings & Vector Search (6 hours)
 
-**Person C (AI/embeddings) - Main Implementation**
+**Person B (AI/Embeddings Main)**
 - [ ] Implement `EmbeddingsService.__init__()`:
   - [ ] Initialize GenAI API
   - [ ] Initialize ChromaDB client
@@ -96,7 +108,7 @@
 - [ ] Implement `delete_document_embeddings()`:
   - [ ] Delete ChromaDB collection for document
 
-**Person A (Backend)**
+**Person C (Backend Main)**
 - [ ] Uncomment/enable embeddings call in `upload_document()`:
   ```python
   app.embeddings_service.embed_document(doc.id, text)
@@ -105,9 +117,13 @@
   ```python
   app.embeddings_service.delete_document_embeddings(doc_id)
   ```
+- [ ] Test end-to-end: Upload document → embeddings created → ChromaDB updated
+- [ ] **Side Task (Frontend)**: Add debug log output to frontend console to show embedding status when documents are uploaded.
 
-**Person B (Frontend)**
-- [ ] (No changes needed - frontend is ready)
+**Person A (Frontend Main)**
+- [ ] Add visual feedback when document is being embedded (loading spinner)
+- [ ] Display success/error message after embedding completes
+- [ ] **Side Task (AI/Embeddings)**: Understand chunk retrieval logic. Help test semantic search with various queries to ensure chunking/retrieval works as expected.
 
 **Testing**
 - [ ] Upload document
@@ -116,14 +132,15 @@
   - [ ] Upload document about Python
   - [ ] Query "Python code" should retrieve document chunks
   - [ ] Add debug logs to verify retrieval
+- [ ] Test chunk retrieval quality (does top-3 make sense?)
 
-**Deliverable**: Documents are embedded and searchable. ChromaDB collections created per document.
+**Deliverable**: Documents are embedded and searchable. ChromaDB collections created per document. Embedding status visible to user.
 
 ---
 
 ### ✅ DAY 4: AI Chat & Streaming (8 hours)
 
-**Person C (AI/embeddings) - AI Agent**
+**Person B (AI/Embeddings Main)**
 - [ ] Implement `AIAgent.__init__()`:
   - [ ] Configure genai API
   - [ ] Create GenerativeModel
@@ -141,86 +158,102 @@
   - [ ] Count output tokens
   - [ ] Return token counts
 
-**Person A (Backend) - `/chat` Route**
-- [ ] Implement `chat()` route:
+**Person C (Backend Main)**
+- [ ] Implement `chat()` route in `app.py`:
   - [ ] Get query, document_id from request
   - [ ] Get Settings from database
-  - [ ] Retrieve context from ChromaDB
+  - [ ] Retrieve context from ChromaDB using EmbeddingsService
   - [ ] Call AI agent's `generate_response()`
   - [ ] Collect full response text
   - [ ] Create ChatMessage DB entry
   - [ ] Log usage with UsageTracker
   - [ ] Return response as JSON
+- [ ] Ensure error handling for missing documents or failed embeddings lookups
+- [ ] **Side Task (Frontend)**: Test chat route with curl/Postman before Person A integrates frontend.
 
-**Person B (Frontend) - Chat UI**
-- [ ] Update `chat_box.html`:
+**Person A (Frontend Main)**
+- [ ] Update `chat_box.html` template:
   - [ ] Add chat history display area
   - [ ] Add user input textarea
   - [ ] Add send button
 - [ ] Implement JavaScript event handler in `chat_box.html`:
-  - [ ] Form submit → POST to `/chat`
+  - [ ] Form submit → POST to `/chat` with query and selected document_id
   - [ ] Display user message in chat
-  - [ ] Display AI response in chat
+  - [ ] Display AI response in chat as it streams in
   - [ ] Clear input after sending
   - [ ] Auto-scroll to latest message
 - [ ] Style chat messages:
   - [ ] User messages: right-aligned, blue
   - [ ] AI messages: left-aligned, gray
+- [ ] **Side Task (AI/Embeddings)**: Understand streaming response format. Help debug any token counting or context retrieval issues.
 
 **Testing**
 - [ ] Upload document
 - [ ] Select document from sidebar
 - [ ] Type question
 - [ ] Click Send
-- [ ] Response appears in chat box
+- [ ] Response appears in chat box with streaming effect
 - [ ] Token count is accurate
 - [ ] Multiple messages show in conversation
+- [ ] Settings (temperature, tone) affect response quality
 
-**Deliverable**: Ask questions about document. Get AI responses. Tokens tracked.
+**Deliverable**: Ask questions about document. Get AI responses with streaming. Tokens tracked accurately.
 
 ---
 
 ### ✅ DAY 5: Settings & Usage Dashboard (4 hours)
 
-**Person B (Frontend) - Settings Form**
+**Person A (Frontend Main)**
 - [ ] Review `settings_panel.html` template:
   - [ ] Verify all form fields are present
   - [ ] Implement real-time slider value display
-  - [ ] Test form submission
+  - [ ] Test form submission to backend
 - [ ] Wire up sliders JavaScript:
   - [ ] Temperature slider updates temperature-display
   - [ ] Top-p slider updates top_p-display
+  - [ ] POST updated settings to `/update-settings`
+- [ ] Review `usage_stats.html` template
+- [ ] Verify stats display (auto-update from backend)
+- [ ] Test that numbers format correctly
+- [ ] **Side Task (AI/Embeddings)**: Ensure temperature/top-p changes actually affect AI response creativity. Help test the settings impact.
 
-**Person A (Backend) - `/update-settings` Route**
-- [ ] Implement `update_settings()` route:
+**Person C (Backend Main)**
+- [ ] Implement `update_settings()` route in `app.py`:
   - [ ] Get or create Settings entry
-  - [ ] Extract form data
-  - [ ] Update all fields
+  - [ ] Extract form data (temperature, top_p, audience_level, tone)
   - [ ] Validate ranges (temp 0-2, top_p 0-1)
   - [ ] Save to database
-  - [ ] Redirect to dashboard
+  - [ ] Return JSON success response or redirect
+- [ ] Ensure Settings are loaded when app starts
+- [ ] Add `/get-usage-stats` route to return usage data as JSON:
+  - [ ] Call `UsageTracker.get_total_usage()`
+  - [ ] Return formatted stats (total tokens, request count, last updated)
+- [ ] Test both routes end-to-end
+- [ ] **Side Task (Frontend)**: Verify that the HTML forms POST data correctly. Help debug any validation issues.
 
-**Person C (AI/embeddings)**
-- [ ] Verify `UsageTracker.get_total_usage()` works
-- [ ] Test `UsageTracker.log_usage()` is called from chat endpoint
-- [ ] Verify recent usage is returned correctly
+**Person B (AI/Embeddings Main)**
+- [ ] Verify `UsageTracker.log_usage()` is called correctly from chat endpoint
+- [ ] Verify `UsageTracker.get_total_usage()` returns correct aggregates
+- [ ] Test that settings (temperature, top_p, audience_level, tone) are passed to AI agent
+- [ ] Verify that changing settings actually changes AI response behavior
+- [ ] **Side Task (Backend)**: Help ensure settings are properly threaded through the chat flow.
 
-**Frontend - Dashboard**
-- [ ] Review `usage_stats.html` template
-- [ ] Verify stats display (should auto-update from backend)
-- [ ] Test that numbers format correctly
-
-**Testing**
-- [ ] Ask 5 questions to generate usage
+**Testing** (All three collaborate)
+- [ ] Ask 5 questions to generate usage data
 - [ ] Dashboard shows total tokens, requests
-- [ ] Adjust temperature slider
-- [ ] Ask another question
-- [ ] Verify temperature change affected response (more creative or more consistent)
+- [ ] Adjust temperature slider to 1.0 (more creative)
+- [ ] Ask question: "Be creative: what could this concept apply to?"
+- [ ] Response is more exploratory/creative
+- [ ] Adjust temperature slider to 0.1 (very consistent)
+- [ ] Ask same question again
+- [ ] Response is more mechanical/predictable
 - [ ] Refresh page
 - [ ] Settings persist
-- [ ] Usage stats remain
+- [ ] Usage stats remain (not reset)
+- [ ] Change tone to "Academic" and ask a question
+- [ ] Response uses more formal language
 
-**Deliverable**: Settings panel works. Usage dashboard displays accurate stats. Everything persists.
+**Deliverable**: Settings panel works. Usage dashboard displays accurate stats. Temperature/tone changes affect AI responses. Everything persists across page refresh.
 
 ---
 

@@ -12,4 +12,6 @@
 
 ### 18-05-2026 11:48
 - **Prompt**: complete the readme so that my teammates know how to install venv and set up the environment with the requirements.txt
+### 18-05-2026 11:44
+- **Prompt**: Revise the daily checklist from day 2 so that person A works mainly on frontend with a side of AI/embeddings, Person B mainly AI/embeddings with a side of backend, and Person C gets backend and a side of frontend. Make sure that whatever they work on mesh together properly
 
