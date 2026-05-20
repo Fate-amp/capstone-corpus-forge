@@ -92,6 +92,96 @@
     // - Handle form submission
     // - Show loading state
     // - Handle errors
+
+    const uploadModal = document.getElementById('upload-modal');
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadForm = document.getElementById('upload-form');
+    const fileInput = document.getElementById('file-input');
+
+    // File validation constants
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    const ALLOWED_TYPES = ['application/pdf', 'text/plain', 'text/x-python', 'text/x-javascript', 'application/json'];
+    const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.py', '.js', '.json', '.md', '.cpp', '.java'];
+
+    // Show/hide modal
+    uploadBtn.addEventListener('click', () => {
+        uploadModal.classList.remove('hidden');
+    });
+
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+            uploadModal.classList.add('hidden');
+            uploadForm.reset();
+        });
+    });
+
+    // Form submission with validation and loading state
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const file = fileInput.files[0];
+        if (!file) return;
+        
+        // Validate file
+        if (!validateFile(file)) return;
+        
+        // Show loading state
+        const submitBtn = uploadForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading...';
+        
+        try {
+            const formData = new FormData(uploadForm);
+            const response = await fetch(uploadForm.action, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                showNotification('File uploaded successfully!', 'success');
+                uploadModal.classList.add('hidden');
+                uploadForm.reset();
+                // Optionally refresh document list here
+            } else {
+                const error = await response.text();
+                showNotification(`Upload failed: ${error}`, 'error');
+            }
+        } catch (error) {
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    });
+
+    function validateFile(file) {
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+            showNotification(`File too large. Max size is 50MB.`, 'error');
+            return false;
+        }
+        
+        // Check file type
+        const extension = '.' + file.name.split('.').pop().toLowerCase();
+        if (!ALLOWED_EXTENSIONS.includes(extension)) {
+            showNotification(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`, 'error');
+            return false;
+        }
+        
+        return true;
+    }
+
+    function showNotification(message, type) {
+        // Create a simple toast notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => notification.remove(), 3000);
+    }
     
     document.getElementById('upload-btn').addEventListener('click', function() {
         document.getElementById('upload-modal').classList.remove('hidden');
