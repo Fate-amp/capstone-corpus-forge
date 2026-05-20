@@ -342,3 +342,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - Day 2 Backend: Implement `/upload` route to receive and process form data
 - Day 2 Backend: Delete button handler for `/delete/<doc_id>` route
 - Day 3: Visual feedback when embeddings are being generated (Person A side task)
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 20-05-2026 10:18
+- **Prompt**: why is the css not showing up on the pages

@@ -38,3 +38,6 @@
 ### 20-05-2026 10:12
 - **Prompt**: #file:DAILY_CHECKLIST.md Implement file input form with proper file type validation feedback
 
+### 20-05-2026 10:18
+- **Prompt**: why is the css not showing up on the pages
+
