@@ -32,3 +32,6 @@
 ### 20-05-2026 10:00
 - **Prompt**: Initialize flask
 
+### 20-05-2026 10:09
+- **Prompt**: the dashboard is not properly working so far. can you please fix it?
+
