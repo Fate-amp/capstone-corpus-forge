@@ -60,13 +60,6 @@
 </div>
 
 <!-- Hidden Upload Form Modal -->
-<!-- 
-    TODO: Day 2 - Create file upload modal
-    - Accept PDF, TXT, or code files
-    - Show file size limit
-    - Display upload progress
-    - Show error messages
--->
 <div id="upload-modal" class="modal hidden">
     <div class="modal-content">
         <div class="modal-header">
@@ -74,12 +67,40 @@
             <button class="modal-close">&times;</button>
         </div>
         <form id="upload-form" method="POST" action="{{ url_for('upload_document') }}" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="file-input">Choose file (PDF, TXT, or Code):</label>
-                <input type="file" id="file-input" name="file" required>
+            <!-- Allowed file types info -->
+            <div class="upload-info">
+                <p class="info-text">
+                    <strong>Allowed formats:</strong> PDF, TXT, Python (.py), JavaScript (.js), JSON (.json), Markdown (.md), C++ (.cpp), Java (.java)
+                </p>
+                <p class="info-text">
+                    <strong>Max file size:</strong> 50 MB
+                </p>
             </div>
+
+            <!-- File input group with validation feedback -->
+            <div class="form-group">
+                <label for="file-input">Choose file:</label>
+                <div class="file-input-wrapper">
+                    <input 
+                        type="file" 
+                        id="file-input" 
+                        name="file" 
+                        accept=".pdf,.txt,.py,.js,.json,.md,.cpp,.java"
+                        required
+                    >
+                    <span class="file-input-label">
+                        <svg class="file-icon" viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                        </svg>
+                        <span id="file-name-display">Click to select file</span>
+                    </span>
+                </div>
+                <div id="file-validation-feedback" class="validation-feedback hidden"></div>
+            </div>
+
+            <!-- Form actions -->
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <button type="submit" class="btn btn-primary" id="upload-submit-btn">Upload</button>
                 <button type="button" class="btn btn-secondary modal-close">Cancel</button>
             </div>
         </form>
@@ -87,49 +108,155 @@
 </div>
 
 <script>
-    // TODO: Day 2 - Implement upload modal functionality
-    // - Show/hide modal
-    // - Handle form submission
-    // - Show loading state
-    // - Handle errors
+    // ========================================================================
+    // Upload Modal & File Validation
+    // ========================================================================
 
     const uploadModal = document.getElementById('upload-modal');
     const uploadBtn = document.getElementById('upload-btn');
     const uploadForm = document.getElementById('upload-form');
     const fileInput = document.getElementById('file-input');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const validationFeedback = document.getElementById('file-validation-feedback');
+    const submitBtn = document.getElementById('upload-submit-btn');
 
     // File validation constants
     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-    const ALLOWED_TYPES = ['application/pdf', 'text/plain', 'text/x-python', 'text/x-javascript', 'application/json'];
     const ALLOWED_EXTENSIONS = ['.pdf', '.txt', '.py', '.js', '.json', '.md', '.cpp', '.java'];
 
-    // Show/hide modal
+    // ========================================================================
+    // Modal Controls
+    // ========================================================================
+
+    // Open modal when upload button clicked
     uploadBtn.addEventListener('click', () => {
         uploadModal.classList.remove('hidden');
+        fileInput.focus();
     });
 
+    // Close modal when close button or cancel clicked
     document.querySelectorAll('.modal-close').forEach(btn => {
         btn.addEventListener('click', () => {
             uploadModal.classList.add('hidden');
             uploadForm.reset();
+            fileNameDisplay.textContent = 'Click to select file';
+            validationFeedback.classList.add('hidden');
         });
     });
 
-    // Form submission with validation and loading state
+    // ========================================================================
+    // File Input Validation (Real-time)
+    // ========================================================================
+
+    /**
+     * Validate file and display feedback
+     */
+    function validateFile(file) {
+        if (!file) {
+            return { valid: false, message: '' };
+        }
+
+        // Get file extension
+        const extension = '.' + file.name.split('.').pop().toLowerCase();
+        const fileName = file.name;
+        const fileSize = file.size;
+
+        // Validate extension
+        if (!ALLOWED_EXTENSIONS.includes(extension)) {
+            const allowed = ALLOWED_EXTENSIONS.join(', ');
+            return {
+                valid: false,
+                message: `❌ Invalid file type: "${extension}". Allowed types: ${allowed}`
+            };
+        }
+
+        // Validate file size
+        if (fileSize > MAX_FILE_SIZE) {
+            const maxSizeMB = Math.round(MAX_FILE_SIZE / 1024 / 1024);
+            const actualSizeMB = (fileSize / 1024 / 1024).toFixed(2);
+            return {
+                valid: false,
+                message: `❌ File too large: ${actualSizeMB} MB. Maximum size: ${maxSizeMB} MB`
+            };
+        }
+
+        // File is valid
+        const fileSizeKB = (fileSize / 1024).toFixed(2);
+        return {
+            valid: true,
+            message: `✅ "${fileName}" (${fileSizeKB} KB) - Ready to upload`
+        };
+    }
+
+    /**
+     * Update validation feedback display
+     */
+    function showValidationFeedback(message, isValid) {
+        validationFeedback.textContent = message;
+        validationFeedback.classList.remove('hidden');
+        
+        if (isValid) {
+            validationFeedback.classList.remove('feedback-error');
+            validationFeedback.classList.add('feedback-success');
+            submitBtn.disabled = false;
+        } else {
+            validationFeedback.classList.remove('feedback-success');
+            validationFeedback.classList.add('feedback-error');
+            submitBtn.disabled = true;
+        }
+    }
+
+    /**
+     * Hide validation feedback
+     */
+    function hideValidationFeedback() {
+        validationFeedback.classList.add('hidden');
+        submitBtn.disabled = false;
+    }
+
+    // Real-time validation as user selects file
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        
+        if (file) {
+            // Update file name display
+            fileNameDisplay.textContent = file.name;
+            
+            // Validate and show feedback
+            const validation = validateFile(file);
+            showValidationFeedback(validation.message, validation.valid);
+        } else {
+            // No file selected
+            fileNameDisplay.textContent = 'Click to select file';
+            hideValidationFeedback();
+        }
+    });
+
+    // ========================================================================
+    // Form Submission with Upload Feedback
+    // ========================================================================
+
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const file = fileInput.files[0];
-        if (!file) return;
+        if (!file) {
+            showNotification('Please select a file', 'error');
+            return;
+        }
         
-        // Validate file
-        if (!validateFile(file)) return;
+        // Final validation before upload
+        const validation = validateFile(file);
+        if (!validation.valid) {
+            showNotification(validation.message, 'error');
+            return;
+        }
         
         // Show loading state
-        const submitBtn = uploadForm.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
         submitBtn.disabled = true;
         submitBtn.textContent = 'Uploading...';
+        submitBtn.classList.add('loading');
         
         try {
             const formData = new FormData(uploadForm);
@@ -139,59 +266,53 @@
             });
             
             if (response.ok) {
-                showNotification('File uploaded successfully!', 'success');
+                showNotification('✅ File uploaded successfully!', 'success');
                 uploadModal.classList.add('hidden');
                 uploadForm.reset();
-                // Optionally refresh document list here
+                fileNameDisplay.textContent = 'Click to select file';
+                validationFeedback.classList.add('hidden');
+                
+                // Optionally refresh document list
+                setTimeout(() => location.reload(), 1500);
             } else {
                 const error = await response.text();
-                showNotification(`Upload failed: ${error}`, 'error');
+                showNotification(`❌ Upload failed: ${error}`, 'error');
             }
         } catch (error) {
-            showNotification(`Error: ${error.message}`, 'error');
+            showNotification(`❌ Error: ${error.message}`, 'error');
+            console.error('Upload error:', error);
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;
+            submitBtn.classList.remove('loading');
         }
     });
 
-    function validateFile(file) {
-        // Check file size
-        if (file.size > MAX_FILE_SIZE) {
-            showNotification(`File too large. Max size is 50MB.`, 'error');
-            return false;
-        }
-        
-        // Check file type
-        const extension = '.' + file.name.split('.').pop().toLowerCase();
-        if (!ALLOWED_EXTENSIONS.includes(extension)) {
-            showNotification(`Invalid file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`, 'error');
-            return false;
-        }
-        
-        return true;
-    }
+    // ========================================================================
+    // Notification Toast System
+    // ========================================================================
 
+    /**
+     * Show temporary toast notification
+     */
     function showNotification(message, type) {
-        // Create a simple toast notification
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
+        notification.setAttribute('role', 'alert');
         document.body.appendChild(notification);
         
-        // Auto-remove after 3 seconds
-        setTimeout(() => notification.remove(), 3000);
-    }
-    
-    document.getElementById('upload-btn').addEventListener('click', function() {
-        document.getElementById('upload-modal').classList.remove('hidden');
-    });
-    
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('upload-modal').classList.add('hidden');
+        // Trigger animation
+        requestAnimationFrame(() => {
+            notification.classList.add('show');
         });
-    });
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 4000);
+    }
 </script>
 
 {% endblock %}

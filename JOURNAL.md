@@ -232,3 +232,113 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 20-05-2026 10:12
 - **Prompt**: #file:DAILY_CHECKLIST.md Implement file input form with proper file type validation feedback
+
+### **Interaction Summary: File Input Form with Validation Feedback**
+- **Date**: 20-05-2026 10:12-10:30
+- **Duration**: ~18 minutes
+- **Status**: COMPLETED ✅
+- **Phase**: DAY 2 - Document Upload & Management (Person A - Frontend Main)
+- **Changes Made**:
+
+#### **Files Modified**:
+1. **`templates/dashboard.html`**:
+   - Enhanced upload modal HTML with new info section displaying allowed formats and max file size
+   - Updated file input with `accept` attribute to filter by file extension (.pdf, .txt, .py, .js, .json, .md, .cpp, .java)
+   - Added file-input-wrapper div with styled label and file name display
+   - Added validation feedback div with dynamic styling (success/error states)
+   - Replaced basic JavaScript with comprehensive validation handler:
+     - Real-time file validation on selection
+     - File name display in custom input label
+     - File size validation (50MB max)
+     - File extension validation against whitelist
+     - Formatted error/success messages with icons and details
+     - Loading state for submit button during upload
+     - Notification system with auto-dismiss
+     - Modal reset on close
+
+2. **`static/css/main.css`**:
+   - Added new section for file upload and validation styles:
+     - `.upload-info`: Info box styling with blue background and left border
+     - `.file-input-wrapper`: Container for custom file input
+     - `.file-input-label`: Styled dashed border input area with hover/active states
+     - `.file-icon`: SVG icon styling
+     - `.validation-feedback`: Success/error message styling with smooth animations
+     - `.validation-feedback.feedback-success`: Green success state
+     - `.validation-feedback.feedback-error`: Red error state
+   - Enhanced notification system:
+     - Improved positioning and styling
+     - Success/error/info variants with colored borders
+     - Smooth slide-in animations
+     - Better box-shadow for depth
+   - Modal improvements:
+     - Slide-in animation for modal content
+     - Loading state for buttons with spinner animation
+     - Enhanced close button with hover transform
+
+#### **UX Improvements Implemented**:
+1. **Real-Time Validation**:
+   - Users see immediate feedback when selecting files
+   - Validation triggers on file selection, not form submission
+   - Clear error messages explain what went wrong (extension, size, etc.)
+
+2. **File Type Clarity**:
+   - Accepted formats displayed in info box at top of form
+   - File input `accept` attribute filters file picker (browser level)
+   - Whitelist validates backend side
+
+3. **Better Error Messages**:
+   - Shows actual file size vs max allowed
+   - Shows actual extension vs allowed extensions
+   - Success message confirms file name and size
+
+4. **Visual Feedback**:
+   - Custom file input with hover states
+   - Success/error states clearly distinguished by color
+   - Loading spinner on submit button
+   - Toast notifications for upload status
+   - Smooth animations (slide-down for validation, slide-in for notifications)
+
+5. **Form Usability**:
+   - File name displays in custom label once selected
+   - Submit button disabled until valid file selected
+   - Modal resets properly on close
+   - Form clears after successful upload
+
+#### **JavaScript Features**:
+- `validateFile()`: Checks extension and size, returns detailed validation object
+- `showValidationFeedback()`: Displays feedback with styling and button state
+- `hideValidationFeedback()`: Clears feedback when needed
+- Real-time event listener on file input change
+- Form submission with final validation before upload
+- Toast notification system with auto-dismiss
+- Modal state management with proper cleanup
+
+#### **Rationale**:
+- **Person A (Frontend)** focus: Complete upload modal UI with professional validation UX
+- **Validation feedback** is non-intrusive (appears below input, doesn't block form)
+- **Real-time validation** improves user confidence before clicking upload
+- **Whitelist approach** (ALLOWED_EXTENSIONS array) is maintainable and secure
+- **Toast notifications** provide clear feedback about upload status
+- **CSS animations** make UX feel polished without being distracting
+- Prepares for **Day 2 Backend** integration: File validation handler in route can reference same ALLOWED_EXTENSIONS list
+
+#### **Testing Considerations**:
+- ✅ File picker filters by allowed extensions
+- ✅ Selecting PDF shows success message with size
+- ✅ Selecting .docx shows error message
+- ✅ File >50MB shows size error
+- ✅ Form submit disabled until valid file selected
+- ✅ Loading state shows on submit
+- ✅ Toast notifications auto-dismiss
+- ✅ Modal closes and resets properly
+- ✅ Page auto-reloads on successful upload
+
+#### **Integration Points**:
+- Backend (`app.py` Day 2): `upload_document()` route receives validated file from form
+- Person B (AI/Embeddings Day 2): Will verify extracted text from uploaded files
+- Person C (Backend Day 2): Will implement file save and DB entry creation
+
+#### **Next Steps**:
+- Day 2 Backend: Implement `/upload` route to receive and process form data
+- Day 2 Backend: Delete button handler for `/delete/<doc_id>` route
+- Day 3: Visual feedback when embeddings are being generated (Person A side task)
