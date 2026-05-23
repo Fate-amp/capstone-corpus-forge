@@ -463,3 +463,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 23-05-2026 13:42
 - **Prompt**: here, why should we use os and load_dotenv to load the api key?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 23-05-2026 13:49
+- **Prompt**: you're a genAI tutor. teach me how the library google.genai works in general. Just the important details to get the main idea
