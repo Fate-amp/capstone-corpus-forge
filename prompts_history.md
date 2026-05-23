@@ -74,3 +74,6 @@
 ### 23-05-2026 13:20
 - **Prompt**: here's the documentation: https://googleapis.github.io/python-genai/?utm_source=chatgpt.com
 
+### 23-05-2026 13:42
+- **Prompt**: here, why should we use os and load_dotenv to load the api key?
+
