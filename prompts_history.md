@@ -56,3 +56,6 @@
 ### 23-05-2026 13:10
 - **Prompt**: i changed the genAI package to google.genai and something broke because the library is different. can you tell me what it is and fix it?
 
+### 23-05-2026 13:10
+- **Prompt**: no it must be genai because support has ended for the other package
+
