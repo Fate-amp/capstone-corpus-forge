@@ -80,3 +80,6 @@
 ### 23-05-2026 13:49
 - **Prompt**: you're a genAI tutor. teach me how the library google.genai works in general. Just the important details to get the main idea
 
+### 23-05-2026 14:04
+- **Prompt**: before I go on with other features, I wanna fix the context, teach me how chromadb works. What's the main idea?
+
