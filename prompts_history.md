@@ -62,3 +62,6 @@
 ### 23-05-2026 13:12
 - **Prompt**: first tell me, how do i create .env file? do i copy the env.template and name the file env?
 
+### 23-05-2026 13:14
+- **Prompt**: I'm having this error: ERROR: GOOGLE_API_KEY not set in .env file
+
