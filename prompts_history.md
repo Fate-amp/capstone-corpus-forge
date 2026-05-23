@@ -86,3 +86,6 @@
 ### 23-05-2026 14:09
 - **Prompt**: fix all files based on the change in the library: genai instead of generativeai update requirements.txt as well
 
+### 23-05-2026 14:14
+- **Prompt**: i pushed env to github and had to get a new API key because it was marked as leaked. how do we use it as a team without pushing it to github?
+
