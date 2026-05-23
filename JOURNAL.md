@@ -488,3 +488,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 23-05-2026 23:59
 - **Prompt**: For a first-year BSC CS student, tone it down with the explanations. I want to start implementing the ai_agent.py and the embeddings.py where do i start? from which todo keep your answer short
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 24-05-2026 01:16
+- **Prompt**: I added a test pdf file to be processed Tell me, what do I need to imeplement that I haven't to make the basic prompting of this file work?
