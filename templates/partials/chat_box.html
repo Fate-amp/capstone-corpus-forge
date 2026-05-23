@@ -1,0 +1,107 @@
+<!-- 
+    Chat Box Partial
+    
+    Displays:
+    - Chat history (previous Q&A pairs)
+    - User input textarea
+    - Send button
+    - Loading indicator during response generation
+    - Streaming response display
+    
+    TODO: Day 4 Implementation
+    - Display chat history with proper formatting
+    - Real-time streaming of AI responses
+    - Input form submission
+    - Loading state UI
+    - Error message display
+    - Auto-scroll to latest message
+    
+    Chat format:
+    - User messages: right-aligned, blue background
+    - AI responses: left-aligned, gray background
+    - Timestamps for each message
+-->
+
+<div class="chat-history" id="chat-history">
+    <!-- 
+        TODO: Day 4 - Populate with ChatMessage entries from backend
+        
+        For each message, show:
+        - Query (user message)
+        - Response (AI message)
+        - Timestamp
+        - Token count (optional)
+    -->
+    <div class="empty-chat-state">
+        <p>Select a document and ask a question to get started!</p>
+    </div>
+</div>
+
+<div class="chat-input-area">
+    <form id="chat-form" method="POST" action="{{ url_for('chat') }}">
+        <!-- Hidden field for selected document -->
+        <input type="hidden" id="selected-doc-id" name="document_id" value="">
+        
+        <!-- Query textarea -->
+        <textarea
+            id="chat-input"
+            name="query"
+            class="chat-input"
+            placeholder="Ask a question about the document..."
+            rows="4"
+            disabled
+        ></textarea>
+        
+        <!-- Send button -->
+        <div class="chat-actions">
+            <button type="submit" class="btn btn-primary" id="send-btn" disabled>
+                Send
+            </button>
+            <div class="chat-loading hidden" id="chat-loading">
+                <span class="spinner"></span>
+                <span>Generating response...</span>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // TODO: Day 4 - Implement chat functionality
+    
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatHistory = document.getElementById('chat-history');
+    const loadingIndicator = document.getElementById('chat-loading');
+    const selectedDocIdInput = document.getElementById('selected-doc-id');
+    
+    // TODO: Enable/disable input based on selected document
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const query = chatInput.value.trim();
+        const docId = selectedDocIdInput.value;
+        
+        if (!query || !docId) return;
+        
+        // TODO: Day 4 Implementation Steps:
+        // 1. Disable input and show loading indicator
+        // 2. Send POST /chat request with query and document_id
+        // 3. Use fetch API with streaming support
+        // 4. For each chunk, append to chat-history
+        // 5. Create message HTML with proper formatting
+        // 6. Auto-scroll to latest message
+        // 7. Clear input on success
+        // 8. Show error message on failure
+        // 9. Re-enable input
+        
+        console.log('Chat submit:', { query, docId });
+    });
+    
+    // TODO: Auto-scroll chat to bottom
+    function scrollChatToBottom() {
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+</script>

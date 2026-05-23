@@ -1,0 +1,133 @@
+<!-- 
+    Usage Statistics Dashboard Partial
+    
+    Displays:
+    - Total requests made
+    - Total tokens used (input + output)
+    - Today's usage
+    - Recent requests table
+    - Usage trends
+    
+    TODO: Day 5 Implementation
+    - Query UsageLog table for statistics
+    - Format numbers with thousand separators
+    - Show daily/weekly/monthly breakdown
+    - Add usage alerts (if nearing quota)
+    - Display cost estimates (optional)
+    - Export usage data (CSV)
+-->
+
+<div class="usage-stats-container">
+    <h3>AI Usage Statistics</h3>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Requests</div>
+            <div class="stat-value">
+                {% if usage_stats %}
+                    {{ "{:,}".format(usage_stats.total_requests) }}
+                {% else %}
+                    0
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Total Tokens</div>
+            <div class="stat-value">
+                {% if usage_stats %}
+                    {{ "{:,}".format(usage_stats.total_tokens) }}
+                {% else %}
+                    0
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Avg Tokens/Request</div>
+            <div class="stat-value">
+                {% if usage_stats %}
+                    {{ "{:,}".format(usage_stats.avg_tokens_per_request) }}
+                {% else %}
+                    0
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="token-breakdown">
+        <h4>Token Breakdown</h4>
+        <div class="breakdown-bars">
+            <div class="breakdown-item">
+                <label>Input Tokens</label>
+                <div class="bar input-bar">
+                    <div class="bar-fill">
+                        {{ "{:,}".format(usage_stats.total_tokens_input) if usage_stats else "0" }}
+                    </div>
+                </div>
+            </div>
+            <div class="breakdown-item">
+                <label>Output Tokens</label>
+                <div class="bar output-bar">
+                    <div class="bar-fill">
+                        {{ "{:,}".format(usage_stats.total_tokens_output) if usage_stats else "0" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests Table -->
+    {% if recent_usage %}
+    <div class="recent-requests">
+        <h4>Recent Requests</h4>
+        <table class="usage-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Tokens</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_usage %}
+                <tr>
+                    <td>{{ log.request_type }}</td>
+                    <td>{{ log.tokens_input + log.tokens_output }}</td>
+                    <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* TODO: Move to main.css */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        text-align: center;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+</style>
