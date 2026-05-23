@@ -33,3 +33,8 @@
 - **Changes Made**: Activated journal logger workflow and appended a new JOURNAL.md entry for this prompt.
 - **Context and Reasons for Changes**: Prompt explicitly requested activation of the logger and logging this interaction in chronological append-only order.
 
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 23-05-2026 11:20
+- **Prompt**: I need to implement the GoogleGenAI in this project, handle the embeddings and the features. The problem is, I don't know how creating an agent and tailor it for my app works. I need you to explain to me the life cycle of the app like you're a senior fullstack developer as clearly as you can
