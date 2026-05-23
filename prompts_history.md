@@ -50,3 +50,6 @@
 ### 23-05-2026 11:20
 - **Prompt**: I need to implement the GoogleGenAI in this project, handle the embeddings and the features. The problem is, I don't know how creating an agent and tailor it for my app works. I need you to explain to me the life cycle of the app like you're a senior fullstack developer as clearly as you can
 
+### 23-05-2026 11:45
+- **Prompt**: let's start with this file the current skeleton seems to have implemented the functions, am I mistaken? Also it's very confusing and I don't know where to start. Can you give me clear tasks and steps?
+
