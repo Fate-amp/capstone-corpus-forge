@@ -473,3 +473,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 23-05-2026 14:04
 - **Prompt**: before I go on with other features, I wanna fix the context, teach me how chromadb works. What's the main idea?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 23-05-2026 14:09
+- **Prompt**: fix all files based on the change in the library: genai instead of generativeai update requirements.txt as well
