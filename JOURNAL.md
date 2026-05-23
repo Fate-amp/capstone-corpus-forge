@@ -483,3 +483,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 23-05-2026 14:14
 - **Prompt**: i pushed env to github and had to get a new API key because it was marked as leaked. how do we use it as a team without pushing it to github?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 23-05-2026 23:59
+- **Prompt**: For a first-year BSC CS student, tone it down with the explanations. I want to start implementing the ai_agent.py and the embeddings.py where do i start? from which todo keep your answer short
