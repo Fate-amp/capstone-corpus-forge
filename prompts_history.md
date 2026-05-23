@@ -71,3 +71,6 @@
 ### 23-05-2026 13:17
 - **Prompt**: module 'google.genai' has no attribute 'configure'
 
+### 23-05-2026 13:20
+- **Prompt**: here's the documentation: https://googleapis.github.io/python-genai/?utm_source=chatgpt.com
+
