@@ -393,3 +393,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 23-05-2026 11:45
 - **Prompt**: let's start with this file the current skeleton seems to have implemented the functions, am I mistaken? Also it's very confusing and I don't know where to start. Can you give me clear tasks and steps?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 23-05-2026 13:10
+- **Prompt**: i changed the genAI package to google.genai and something broke because the library is different. can you tell me what it is and fix it?
