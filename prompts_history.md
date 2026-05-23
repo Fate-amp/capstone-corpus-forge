@@ -95,3 +95,6 @@
 ### 24-05-2026 01:16
 - **Prompt**: I added a test pdf file to be processed Tell me, what do I need to imeplement that I haven't to make the basic prompting of this file work?
 
+### 24-05-2026 01:18
+- **Prompt**: where do i need to add the test script to see if the chunking of the document is working?
+
