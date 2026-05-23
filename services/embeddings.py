@@ -13,7 +13,7 @@ TODO: Add metadata filtering for more precise retrieval
 TODO: Add re-ranking of retrieved chunks
 """
 
-import google.generativeai as genai
+from google import genai
 import chromadb
 import logging
 from typing import List, Tuple
@@ -40,16 +40,10 @@ class EmbeddingsService:
             
         TODO: Validate chromadb_path exists and is writable
         """
-        genai.configure(api_key=api_key)
+        self.genai_client = genai.Client(api_key=api_key)
         
         # Initialize ChromaDB client (in-process)
-        self.client = chromadb.Client(
-            chromadb.config.Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory=chromadb_path,
-                anonymized_telemetry=False,
-            )
-        )
+        self.chromadb_client = chromadb.Client()
         self.chromadb_path = chromadb_path
         logger.info(f"ChromaDB initialized at {chromadb_path}")
     
@@ -76,7 +70,7 @@ class EmbeddingsService:
             
             # Step 2: Get or create ChromaDB collection for this document
             collection_name = f"doc_{doc_id}"
-            collection = self.client.get_or_create_collection(
+            collection = self.chromadb_client.get_or_create_collection(
                 name=collection_name,
                 metadata={"doc_id": doc_id}
             )
@@ -84,12 +78,12 @@ class EmbeddingsService:
             # Step 3: Embed and store each chunk
             for chunk_idx, chunk in enumerate(chunks):
                 try:
-                    # Generate embedding
-                    embedding_result = genai.embed_content(
+                    # Generate embedding using google.genai client API
+                    embedding_result = self.genai_client.models.embed_content(
                         model="models/embedding-001",
-                        content=chunk,
+                        contents=chunk,
                     )
-                    embedding = embedding_result['embedding']
+                    embedding = embedding_result.embedding
                     
                     # Store in ChromaDB
                     collection.add(
@@ -150,12 +144,15 @@ class EmbeddingsService:
                 if last_period > len(chunk) * 0.8:  # If period is close to end
                     chunk = chunk[:last_period + 1]
             
-            chunks.append(chunk)
+            if chunk.strip():  # Only add non-empty chunks
+                chunks.append(chunk)
             
             # Move position for next chunk (with overlap)
-            current_pos += len(chunk) - char_overlap
+            # Ensure we always advance by at least 1 character to avoid infinite loop
+            advance = max(1, len(chunk) - char_overlap)
+            current_pos += advance
         
-        return [c for c in chunks if c.strip()]  # Remove empty chunks
+        return chunks
     
     def retrieve_context(
         self,
@@ -183,7 +180,7 @@ class EmbeddingsService:
         try:
             # Get collection for this document
             collection_name = f"doc_{doc_id}"
-            collection = self.client.get_collection(collection_name)
+            collection = self.chromadb_client.get_collection(collection_name)
             
             # Query for similar chunks
             results = collection.query(
@@ -220,9 +217,23 @@ class EmbeddingsService:
         """
         try:
             collection_name = f"doc_{doc_id}"
-            self.client.delete_collection(name=collection_name)
+            self.chromadb_client.delete_collection(name=collection_name)
             logger.info(f"Deleted embeddings for document {doc_id}")
             return True
         except Exception as e:
             logger.warning(f"Could not delete embeddings for doc {doc_id}: {str(e)}")
             return False
+
+if __name__=='__main__':
+    import os
+    from dotenv import load_dotenv
+    
+    # Load .env file into environment variables
+    load_dotenv()
+    
+    api_key = os.getenv('GOOGLE_API_KEY')
+    if not api_key:
+        print("ERROR: GOOGLE_API_KEY not set in .env file")
+        exit(1)
+    embed=EmbeddingsService(api_key)
+    print(f"Embedding was initialized")

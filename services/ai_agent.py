@@ -302,3 +302,5 @@ if __name__ == "__main__":
         exit(1)
     agent = AIAgent(api_key)
     print(f"✓ AIAgent initialized with model: {agent.model_name}")
+    response=agent.generate_response("What is python?","Python is a backend language")
+    print(f"response: {response}")
