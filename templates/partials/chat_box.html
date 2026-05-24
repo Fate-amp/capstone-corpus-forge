@@ -131,8 +131,89 @@
     }
     
     // ========================================================================
-    // Chat Form Submission (Day 4 Implementation Stub)
+    // Chat Form Submission - Full Implementation with Streaming
     // ========================================================================
+    
+    /**
+     * Add a user message to the chat history
+     */
+    function addUserMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message user';
+        
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageDiv.innerHTML = `
+            <div class="chat-message-content">
+                <div>${escapeHtml(message)}</div>
+                <div class="chat-message-time">${timestamp}</div>
+            </div>
+        `;
+        
+        chatHistory.appendChild(messageDiv);
+        scrollChatToBottom();
+        return messageDiv;
+    }
+    
+    /**
+     * Add an AI response message (starts empty, will be populated with streaming chunks)
+     */
+    function addAIMessage() {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message ai';
+        messageDiv.id = 'current-response';
+        
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        messageDiv.innerHTML = `
+            <div class="chat-message-content">
+                <div id="response-text"></div>
+                <div class="chat-message-time">${timestamp}</div>
+            </div>
+        `;
+        
+        chatHistory.appendChild(messageDiv);
+        return messageDiv;
+    }
+    
+    /**
+     * Append text to the current AI response
+     */
+    function appendToAIResponse(text) {
+        const responseText = document.getElementById('response-text');
+        if (responseText) {
+            responseText.textContent += text;
+            scrollChatToBottom();
+        }
+    }
+    
+    /**
+     * Escape HTML to prevent XSS
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Auto-scroll chat to bottom
+     */
+    function scrollChatToBottom() {
+        setTimeout(() => {
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }, 0);
+    }
+    
+    /**
+     * Clear empty chat state when first message is added
+     */
+    function clearEmptyState() {
+        const emptyState = chatHistory.querySelector('.empty-chat-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+    }
     
     // Handle form submission
     chatForm.addEventListener('submit', async function(e) {
@@ -142,27 +223,103 @@
         const docId = selectedDocIdInput.value;
         
         if (!query || !docId) {
-            console.warn('Chat submit prevented: missing query or document ID');
+            showNotification('Please select a document and enter a question', 'error');
             return;
         }
         
-        // TODO: Day 4 Implementation Steps:
-        // 1. Disable input and show loading indicator
-        // 2. Send POST /chat request with query and document_id
-        // 3. Use fetch API with streaming support
-        // 4. For each chunk, append to chat-history
-        // 5. Create message HTML with proper formatting
-        // 6. Auto-scroll to latest message
-        // 7. Clear input on success
-        // 8. Show error message on failure
-        // 9. Re-enable input
+        // Step 1: Disable input and show loading indicator
+        chatInput.disabled = true;
+        sendBtn.disabled = true;
+        loadingIndicator.classList.remove('hidden');
         
-        console.log('Chat submit:', { query, docId });
+        try {
+            // Step 2: Add user message to chat history
+            clearEmptyState();
+            addUserMessage(query);
+            
+            // Step 3: Create AI message placeholder
+            addAIMessage();
+            
+            // Step 4: Send POST /chat request with streaming support
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    document_id: parseInt(docId)
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            // Step 5: Read streaming response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) break;
+                
+                // Decode chunk and add to buffer
+                buffer += decoder.decode(value, { stream: true });
+                
+                // Process complete messages (lines ending with \n\n)
+                const lines = buffer.split('\n\n');
+                
+                // Keep the last incomplete line in the buffer
+                buffer = lines[lines.length - 1];
+                
+                // Process all complete messages
+                for (let i = 0; i < lines.length - 1; i++) {
+                    const line = lines[i].trim();
+                    
+                    if (line.startsWith('data: ')) {
+                        // Extract the data part
+                        const data = line.substring(6);
+                        
+                        // Append to the AI response
+                        appendToAIResponse(data);
+                    }
+                }
+            }
+            
+            // Process any remaining data in the buffer
+            if (buffer.trim().startsWith('data: ')) {
+                const data = buffer.trim().substring(6);
+                appendToAIResponse(data);
+            }
+            
+            // Step 6: Clear input and show success
+            chatInput.value = '';
+            showNotification('Response generated successfully', 'success');
+            
+        } catch (error) {
+            console.error('Chat error:', error);
+            
+            // Show error message in chat
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'chat-message error';
+            errorDiv.innerHTML = `
+                <div class="chat-message-content" style="background-color: #ffe8e8; color: #d32f2f;">
+                    <strong>Error:</strong> ${escapeHtml(error.message)}
+                </div>
+            `;
+            chatHistory.appendChild(errorDiv);
+            scrollChatToBottom();
+            
+            showNotification(`Error: ${error.message}`, 'error');
+        } finally {
+            // Step 7: Re-enable input and hide loading indicator
+            loadingIndicator.classList.add('hidden');
+            chatInput.disabled = false;
+            sendBtn.disabled = false;
+            chatInput.focus();
+        }
     });
-    });
-    
-    // TODO: Auto-scroll chat to bottom
-    function scrollChatToBottom() {
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
 </script>
