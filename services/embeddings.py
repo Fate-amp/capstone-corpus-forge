@@ -63,6 +63,12 @@ class EmbeddingsService:
         TODO: Add progress reporting for large documents
         TODO: Add duplicate chunk detection
         """
+        if doc_id < 1:
+            raise ValueError("Invalid document id")
+
+        if not document_text.strip():
+            raise ValueError("Document is empty")
+        
         try:
             # Step 1: Chunk the document
             chunks = self._chunk_text(document_text)

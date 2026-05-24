@@ -45,8 +45,17 @@ class AIAgent:
         TODO: Validate API key on initialization
         TODO: Test model availability
         """
+        if not api_key:
+            raise ValueError("Google api key is missing")
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
+        try:
+            self.client.models.generate_content(
+                model=self.model_name,
+                contents="test"
+            )
+        except Exception as e:
+            raise RuntimeError("Model failed to initialize") from e
         logger.info(f"AI Agent initialized with model: {model_name}")
     
     def generate_response(
