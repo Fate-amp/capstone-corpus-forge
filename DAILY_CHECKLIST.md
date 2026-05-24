@@ -34,9 +34,9 @@
 ### ✅ DAY 2: Document Upload & Management (6 hours)
 
 **Person A (Frontend Main)**
-- [ ] Implement upload modal in `dashboard.html` (show/hide)
-- [ ] Implement file input form with proper file type validation feedback
-- [ ] Style upload button and modal (CSS in `static/css/main.css`)
+- [X] Implement upload modal in `dashboard.html` (show/hide)
+- [X] Implement file input form with proper file type validation feedback
+- [X] Style upload button and modal (CSS in `static/css/main.css`)
 - [ ] Make document items clickable (add visual selection state)
 - [ ] Implement delete button with confirmation dialog
 - [ ] Add event listeners for:

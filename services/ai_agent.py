@@ -12,9 +12,10 @@ TODO: Add caching for repeated queries
 TODO: Add structured output parsing
 """
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import logging
-from typing import Generator, Tuple
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -33,20 +34,28 @@ class AIAgent:
     TODO: Add fallback strategies if primary model fails
     """
     
-    def __init__(self, api_key: str, model_name: str = "gemini-pro"):
+    def __init__(self, api_key: str, model_name: str = "gemini-2.5-flash"):
         """
         Initialize the AI Agent.
         
         Args:
             api_key (str): Google GenAI API key
-            model_name (str): Model to use (default: gemini-pro)
+            model_name (str): Model to use (default: gemini-2.5-flash)
             
         TODO: Validate API key on initialization
         TODO: Test model availability
         """
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
+        if not api_key:
+            raise ValueError("Google api key is missing")
+        self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
+        try:
+            self.client.models.generate_content(
+                model=self.model_name,
+                contents="test"
+            )
+        except Exception as e:
+            raise RuntimeError("Model failed to initialize") from e
         logger.info(f"AI Agent initialized with model: {model_name}")
     
     def generate_response(
@@ -58,80 +67,94 @@ class AIAgent:
         max_tokens: int = 1000,
         audience_level: str = "intermediate",
         tone: str = "friendly"
-    ) -> Generator[str, None, Tuple[int, int]]:
+    ) -> dict:
         """
-        Generate a streaming response to a query using provided context.
+        Generate a response to a query using provided context.
+        
+        This method:
+        1. Builds a system prompt based on audience and tone
+        2. Calls Google Gemini API with the full message
+        3. Returns the full response with token counts
         
         Args:
             query (str): User's question
-            context (str): Retrieved document chunks (context from ChromaDB)
-            temperature (float): Creativity level (0.0-2.0). Default 0.7
-            top_p (float): Diversity (0.0-1.0). Default 0.9
-            max_tokens (int): Maximum response length
-            audience_level (str): Target audience (beginner, intermediate, expert)
-            tone (str): Response tone (formal, casual, technical, friendly)
-            
-        Yields:
-            str: Response chunks (for streaming)
+            context (str): Retrieved document chunks (from ChromaDB)
+            temperature (float): Creativity level (0.0-2.0). Higher = more creative. Default 0.7
+            top_p (float): Diversity (0.0-1.0). Controls response variety. Default 0.9
+            max_tokens (int): Maximum response length. Default 1000
+            audience_level (str): beginner, intermediate, or expert
+            tone (str): formal, casual, technical, or friendly
             
         Returns:
-            Tuple[int, int]: (tokens_input, tokens_output) on completion
+            dict: {
+                'text': str - The AI response,
+                'tokens_input': int - Tokens in the input message,
+                'tokens_output': int - Tokens in the response,
+                'tokens_total': int - Sum of input + output
+            }
             
+        Raises:
+            Exception: If API call fails
+            
+        TODO: Add retry logic for failed requests
         TODO: Add safety checks (content filtering)
         TODO: Handle context that exceeds token limits
-        TODO: Add retry logic for failed requests
-        TODO: Add structured error responses
         """
         try:
-            # Build system prompt based on audience and tone
+            # Step 1: Build the system prompt based on settings
             system_prompt = self._build_system_prompt(audience_level, tone)
+            logger.info(f"Built system prompt for audience={audience_level}, tone={tone}")
             
-            # Build full message
-            full_message = f"""
-{system_prompt}
+            # Step 2: Build the full message (system + context + question)
+            full_message = f"""{system_prompt}
 
 CONTEXT (from document):
 {context}
 
-USER QUESTION:
+QUESTION:
 {query}
 
-Please answer the question based on the context provided above.
-"""
+Please answer the question using ONLY the context provided above. If the answer is not in the context, say so."""
             
-            # Count tokens for input
+            # Step 3: Count input tokens (before calling API)
             tokens_input = self._count_tokens(full_message)
-            logger.info(f"Input tokens: {tokens_input}")
+            logger.info(f"Input message: {tokens_input} tokens")
             
-            # Generate response with streaming
-            response = self.model.generate_content(
-                full_message,
-                stream=True,
-                generation_config={
-                    'temperature': temperature,
-                    'top_p': top_p,
-                    'max_output_tokens': max_tokens,
-                }
+            # Step 4: Call Google Gemini API using the new genai.Client API
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_message,
+                config=types.GenerateContentConfig(
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_output_tokens=max_tokens,
+                )
             )
             
-            # Yield response chunks
-            full_response = ""
-            for chunk in response:
-                if chunk.text:
-                    full_response += chunk.text
-                    yield chunk.text
+            # Step 5: Extract response text
+            response_text = response.text
+            logger.info(f"Received response: {len(response_text)} characters")
             
-            # Count output tokens
-            tokens_output = self._count_tokens(full_response)
-            logger.info(f"Output tokens: {tokens_output}")
+            # Step 6: Count output tokens
+            tokens_output = self._count_tokens(response_text)
+            logger.info(f"Output message: {tokens_output} tokens")
             
-            # Return token counts for logging
-            return tokens_input, tokens_output
+            # Step 7: Return response with metadata
+            return {
+                'text': response_text,
+                'tokens_input': tokens_input,
+                'tokens_output': tokens_output,
+                'tokens_total': tokens_input + tokens_output
+            }
         
         except Exception as e:
             logger.error(f"Error generating response: {str(e)}")
-            yield f"Error: Failed to generate response. {str(e)}"
-            return 0, 0
+            return {
+                'text': f"Error: {str(e)}",
+                'tokens_input': 0,
+                'tokens_output': 0,
+                'tokens_total': 0
+            }
     
     def _build_system_prompt(self, audience_level: str, tone: str) -> str:
         """
@@ -180,7 +203,10 @@ Please answer the question based on the context provided above.
         TODO: Cache token counts for repeated text
         """
         try:
-            response = genai.count_tokens(text)
+            response = self.client.models.count_tokens(
+                model=self.model_name,
+                contents=text
+            )
             return response.total_tokens
         except Exception as e:
             logger.error(f"Error counting tokens: {str(e)}")
@@ -192,7 +218,7 @@ Please answer the question based on the context provided above.
         context: str,
         num_cards: int = 5,
         audience_level: str = "intermediate"
-    ) -> Generator[str, None, None]:
+    ):
         """
         Generate flashcard QA pairs from document context.
         
@@ -213,7 +239,7 @@ Please answer the question based on the context provided above.
         context: str,
         num_questions: int = 10,
         audience_level: str = "intermediate"
-    ) -> Generator[str, None, None]:
+    ):
         """
         Generate quiz questions from document context.
         
@@ -271,3 +297,19 @@ Please answer the question based on the context provided above.
             str: Control flow analysis report
         """
         pass
+
+if __name__ == "__main__":
+    import os
+    from dotenv import load_dotenv
+    
+    # Load .env file into environment variables
+    load_dotenv()
+    
+    api_key = os.getenv('GOOGLE_API_KEY')
+    if not api_key:
+        print("ERROR: GOOGLE_API_KEY not set in .env file")
+        exit(1)
+    agent = AIAgent(api_key)
+    print(f"✓ AIAgent initialized with model: {agent.model_name}")
+    response=agent.generate_response("What is python?","Python is a backend language")
+    print(f"response: {response}")

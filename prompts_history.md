@@ -1,3 +1,8 @@
+### 15-05-2026 10:42
+- **Prompt**: activate the #file:journal-logger.agent.md
+
+### 15-05-2026 10:44
+- **Prompt**: update the journal with our recent interaction
 ### 18-05-2026 11:04
 - **Prompt**: You're a senior software developer helping me have an idea of the outlines of the app that I want to build. Here's a description of the application. It's an app inspired by NoteBookLM. The users should be able to add, remove, view, select documents for AI interaction. The app is supposed to implement an AI agent, enabling the user to explore the documents chat-based, create flashcars and quizzes, and for the code, a code review report, architecture of the code and a control flow report. The app does not need an authentication for now, but the information and the produced data should persist between sessions. The users should be able to influence AI behavior by tweeking parameters like audience level, format, creativity level, tone,... Also the app should show AI usage info like number of requests, token usage, etc. Also, we should iteratively improve the prompts to reduce hallucinations and the quality of the responses provided The AI that should be implemented here is Google GenAI API and the vector database the chromaDB, and custom agents  We need you to give us a basic structure of the app and also suggest technical tools that you can thing of and would suggest as a senior developer. Take into consideration that we are a team of 3 first-year BSC CS students.
 
@@ -15,6 +20,98 @@
 ### 18-05-2026 11:44
 - **Prompt**: Revise the daily checklist from day 2 so that person A works mainly on frontend with a side of AI/embeddings, Person B mainly AI/embeddings with a side of backend, and Person C gets backend and a side of frontend. Make sure that whatever they work on mesh together properly
 
+<<<<<<< HEAD
 ### 24-05-2026 12:26
 - **Prompt**: help me fix teh corpus forge db issue thats preventing me from merging
+=======
+### 18-05-2026 11:53
+- **Prompt**: accept both changes and fix the merge conflict
+
+### 20-05-2026 09:57
+- **Prompt**: Help me implement upload modal in #file:dashboard.html
+
+### 20-05-2026 10:00
+- **Prompt**: Initialize flask
+
+### 20-05-2026 10:09
+- **Prompt**: the dashboard is not properly working so far. can you please fix it?
+
+### 20-05-2026 10:12
+- **Prompt**: #file:DAILY_CHECKLIST.md Implement file input form with proper file type validation feedback
+
+### 20-05-2026 10:18
+- **Prompt**: why is the css not showing up on the pages
+
+### 20-05-2026 10:23
+- **Prompt**: can you fix this error?
+
+### 15-05-2026 10:43
+- **Prompt**: activate the journal logger
+
+### 15-05-2026 10:43
+- **Prompt**: Activate the journal logger workflow for this repository and append a new entry to JOURNAL.md for the current prompt: "activate the journal logger". Use the required template from .github/agents/journal-logger.agent.md, include a timestamp for May 15, 2026, keep chronological append-at-end ordering, and note that this prompt requested activation of the logger.
+
+### 23-05-2026 11:20
+- **Prompt**: I need to implement the GoogleGenAI in this project, handle the embeddings and the features. The problem is, I don't know how creating an agent and tailor it for my app works. I need you to explain to me the life cycle of the app like you're a senior fullstack developer as clearly as you can
+
+### 23-05-2026 11:45
+- **Prompt**: let's start with this file the current skeleton seems to have implemented the functions, am I mistaken? Also it's very confusing and I don't know where to start. Can you give me clear tasks and steps?
+
+### 23-05-2026 13:10
+- **Prompt**: i changed the genAI package to google.genai and something broke because the library is different. can you tell me what it is and fix it?
+
+### 23-05-2026 13:10
+- **Prompt**: no it must be genai because support has ended for the other package
+
+### 23-05-2026 13:12
+- **Prompt**: first tell me, how do i create .env file? do i copy the env.template and name the file env?
+
+### 23-05-2026 13:14
+- **Prompt**: I'm having this error: ERROR: GOOGLE_API_KEY not set in .env file
+
+### 23-05-2026 13:16
+- **Prompt**: still says the key is not set: # Google GenAI Configuration GOOGLE_API_KEY=AIzaSyAOGmIYGjXkWd-1FoQqVGXFrC7ApZF15QQ  # Flask Configuration FLASK_ENV=development FLASK_DEBUG=True SECRET_KEY=your_secret_key_here  # Database Configuration DATABASE_URL=sqlite:///corpus_forge.db  # ChromaDB Configuration CHROMADB_PATH=./.chromadb  # Upload Configuration UPLOAD_FOLDER=static/uploads MAX_CONTENT_LENGTH=52428800  # 50 MB  # Model Configuration DEFAULT_MODEL=gemini-pro DEFAULT_TEMPERATURE=0.7 DEFAULT_TOP_P=0.9
+
+### 23-05-2026 13:17
+- **Prompt**: module 'google.genai' has no attribute 'configure'
+
+### 23-05-2026 13:20
+- **Prompt**: here's the documentation: https://googleapis.github.io/python-genai/?utm_source=chatgpt.com
+
+### 23-05-2026 13:42
+- **Prompt**: here, why should we use os and load_dotenv to load the api key?
+
+### 23-05-2026 13:49
+- **Prompt**: you're a genAI tutor. teach me how the library google.genai works in general. Just the important details to get the main idea
+
+### 23-05-2026 14:04
+- **Prompt**: before I go on with other features, I wanna fix the context, teach me how chromadb works. What's the main idea?
+
+### 23-05-2026 14:09
+- **Prompt**: fix all files based on the change in the library: genai instead of generativeai update requirements.txt as well
+
+### 23-05-2026 14:14
+- **Prompt**: i pushed env to github and had to get a new API key because it was marked as leaked. how do we use it as a team without pushing it to github?
+
+### 23-05-2026 23:59
+- **Prompt**: For a first-year BSC CS student, tone it down with the explanations. I want to start implementing the ai_agent.py and the embeddings.py where do i start? from which todo keep your answer short
+
+### 24-05-2026 01:16
+- **Prompt**: I added a test pdf file to be processed Tell me, what do I need to imeplement that I haven't to make the basic prompting of this file work?
+
+### 24-05-2026 01:18
+- **Prompt**: where do i need to add the test script to see if the chunking of the document is working?
+
+### 24-05-2026 10:43
+- **Prompt**: I need you to make 2 changes in the frontend. First, make the uploading of the documents possible, tell me where I should receive it to validate the file extension and to see if my agent works and finally, make the chat box the size of the screen and scrollable. I don't want the whole page to scroll
+
+### 24-05-2026 10:52
+- **Prompt**: right now, the whole window of the dashboard scrolls, I want the prompt box to be at the bottom of the screen and the chatbox to be scrollable. If you don't understand what I'm saying, ask me questions. Then, I'm still not able to upload files. why?
+
+### 24-05-2026 11:04
+- **Prompt**: I need you to explain to me why the upload of the documents is not working, and point out the exact lines in the code where that's happening and explain why
+>>>>>>> 00d343ce1e3e3265712e45abc7b74902ed9b7e80
+
+### 24-05-2026 12:27
+- **Prompt**: [Terminal e6781412-ee0d-4d95-aaa4-3a4271533a4c notification: command completed with exit code 1. The terminal has been cleaned up.] Terminal output: PS C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge> cd "c:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge" ; .venv\Scripts\python.exe app.py C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py:15: FutureWarning:   All support for the `google.generativeai` package has ended. It will no longer be receiving  updates or bug fixes. Please switch to the `google.genai` package as soon as possible. See README for more details:  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md    import google.generativeai as genai  * Serving Flask app 'app'  * Debug mode: on INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.  * Running on all addresses (0.0.0.0)  * Running on http://127.0.0.1:5000  * Running on http://10.188.158.174:5000 INFO:werkzeug:Press CTRL+C to quit INFO:werkzeug: * Restarting with stat C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py:15: FutureWarning:   All support for the `google.generativeai` package has ended. It will no longer be receiving  updates or bug fixes. Please switch to the `google.genai` package as soon as possible. See README for more details:  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md    import google.generativeai as genai WARNING:werkzeug: * Debugger is active! INFO:werkzeug: * Debugger PIN: 114-031-340 INFO:werkzeug: * Detected change in 'C:\\Users\\Yara\\Desktop\\Bsc Year 1 25-26\\AI for software dev\\capstone-project\\capstone-corpus-forge\\config.py', reloading INFO:werkzeug: * Restarting with stat C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py:15: FutureWarning:   All support for the `google.generativeai` package has ended. It will no longer be receiving  updates or bug fixes. Please switch to the `google.genai` package as soon as possible. See README for more details:  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md    import google.generativeai as genai WARNING:werkzeug: * Debugger is active! INFO:werkzeug: * Debugger PIN: 114-031-340 INFO:werkzeug: * Detected change in 'C:\\Users\\Yara\\Desktop\\Bsc Year 1 25-26\\AI for software dev\\capstone-project\\capstone-corpus-forge\\app.py', reloading INFO:werkzeug: * Restarting with stat Traceback (most recent call last):   File "C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\app.py", line 43, in <module>     from services.ai_agent import AIAgent   File "C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py", line 15, in <module>     from google import genai ImportError: cannot import name 'genai' from 'google' (unknown location)
 

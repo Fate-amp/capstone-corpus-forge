@@ -156,58 +156,86 @@ def register_routes(app):
     @app.route('/upload', methods=['POST'])
     def upload_document():
         """
-        Handle document upload.
-        
-        Workflow:
-        1. Validate file upload
-        2. Save file to static/uploads/
-        3. Extract text based on file type
-        4. Create Document entry in database
-        5. Generate embeddings and store in ChromaDB
-        6. Redirect to dashboard
-        
-        Form data:
-        - file: File object (PDF, TXT, or code file)
-        
-        TODO: Add file size validation
-        TODO: Add duplicate file detection
-        TODO: Add async embedding for large files
-        TODO: Add error messages for user
-        
-        Day 2 Implementation Checklist:
-        □ Check if file exists in request.files['file']
-        □ Check if file has allowed extension
-        □ Save file with secure filename
-        □ Extract text using document_processor
-        □ Create Document model instance
-        □ Generate preview text
-        □ Save to database
-        □ Generate embeddings (call EmbeddingsService)
-        □ Redirect to GET / with success message
+        Handle document upload, extract text, embed, and store in DB
         """
+        from werkzeug.utils import secure_filename
+        import os
+        from services.document_processor import extract_text_from_pdf
+        from services.embeddings import EmbeddingsService
+        
         try:
-            # Validate file upload
+            # Step 1: Validate file upload
             if 'file' not in request.files:
                 logger.warning("Upload attempt with no file")
-                return redirect(url_for('dashboard'))
+                return jsonify({'error': 'No file uploaded'}), 400
             
             file = request.files['file']
             if file.filename == '':
                 logger.warning("Upload attempt with empty filename")
-                return redirect(url_for('dashboard'))
+                return jsonify({'error': 'No file selected'}), 400
             
-            # Check file extension
+            # Step 2: Check file extension
             if not allowed_file(file.filename, app.config['ALLOWED_EXTENSIONS']):
                 logger.warning(f"Upload attempt with disallowed extension: {file.filename}")
-                return redirect(url_for('dashboard'))
+                return jsonify({'error': 'File type not allowed'}), 400
             
-            # TODO: Day 2 Implementation goes here
-            # See checklist above
+            # Step 3: Save file to disk
+            filename = secure_filename(file.filename)
+            upload_folder = app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_folder, exist_ok=True)
+            filepath = os.path.join(upload_folder, filename)
+            file.save(filepath)
+            logger.info(f"Saved file: {filepath}")
             
-            logger.info(f"Uploaded document: {file.filename}")
-            return redirect(url_for('dashboard'))
+            # Step 4: Extract text from file
+            file_ext = os.path.splitext(filename)[1].lower()
+            if file_ext == '.pdf':
+                text = extract_text_from_pdf(filepath)
+            else:
+                # For TXT and code files
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        text = f.read()
+                except:
+                    with open(filepath, 'r', encoding='latin-1') as f:
+                        text = f.read()
+            
+            logger.info(f"Extracted {len(text)} characters from {filename}")
+            
+            # Step 5: Create Document in database
+            preview = text[:200] + "..." if len(text) > 200 else text
+            title = os.path.splitext(filename)[0]  # Filename without extension
+            doc = Document(
+                filename=filename,
+                title=title,
+                file_path=filepath,
+                file_type=file_ext,
+                content_preview=preview
+            )
+            db.session.add(doc)
+            db.session.commit()
+            logger.info(f"Created document in DB: id={doc.id}, filename={filename}")
+            
+            # Step 6: Generate embeddings
+            try:
+                api_key = os.getenv('GOOGLE_API_KEY')
+                embeddings = EmbeddingsService(api_key=api_key)
+                embeddings.embed_document(doc_id=doc.id, document_text=text)
+                logger.info(f"Embedded document {doc.id} in ChromaDB")
+            except Exception as e:
+                logger.error(f"Error embedding document {doc.id}: {str(e)}")
+                # Continue anyway - embeddings can fail without blocking upload
+            
+            logger.info(f"Successfully uploaded document: {filename}")
+            return jsonify({
+                'success': True,
+                'document_id': doc.id,
+                'message': f'Document "{filename}" uploaded successfully'
+            }), 201
         
         except Exception as e:
+            logger.error(f"Error uploading document: {str(e)}")
+            return jsonify({'error': f'Upload failed: {str(e)}'}), 500
             logger.error(f"Error uploading document: {str(e)}")
             return redirect(url_for('dashboard'))
     
