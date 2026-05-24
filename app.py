@@ -164,67 +164,92 @@ def register_routes(app):
         3. Extract text based on file type
         4. Create Document entry in database
         5. Generate embeddings and store in ChromaDB
-        6. Redirect to dashboard
+        6. Return success/error response
         
         Form data:
         - file: File object (PDF, TXT, or code file)
         
-        TODO: Add file size validation
-        TODO: Add duplicate file detection
-        TODO: Add async embedding for large files
-        TODO: Add error messages for user
-        
-        Day 2 Implementation Checklist:
-        □ Check if file exists in request.files['file']
-        □ Check if file has allowed extension
-        □ Save file with secure filename
-        □ Extract text using document_processor
-        □ Create Document model instance
-        □ Generate preview text
-        □ Save to database
-        □ Generate embeddings (call EmbeddingsService)
-        □ Redirect to GET / with success message
+        Returns:
+        - JSON response with status and message
         """
         try:
             # Check if file exists in request
             if 'file' not in request.files:
                 logger.warning("Upload attempt with no file")
-                return redirect(url_for('dashboard'))
+                return jsonify({'status': 'error', 'message': 'No file provided'}), 400
             
             file = request.files['file']
             if file.filename == '':
                 logger.warning("Upload attempt with empty filename")
-                return redirect(url_for('dashboard'))
+                return jsonify({'status': 'error', 'message': 'Empty filename'}), 400
             
             # Check file extension
             if not allowed_file(file.filename, app.config['ALLOWED_EXTENSIONS']):
                 logger.warning(f"Upload attempt with disallowed extension: {file.filename}")
-                return redirect(url_for('dashboard'))
+                return jsonify({
+                    'status': 'error', 
+                    'message': f'File type not allowed. Allowed types: {", ".join(app.config["ALLOWED_EXTENSIONS"])}'
+                }), 400
+            
+            # Create uploads directory if needed
+            Path(app.config['UPLOAD_FOLDER']).mkdir(parents=True, exist_ok=True)
             
             # Save file with secure filename
             secure_fname = get_secure_filename(file.filename)
             file_type = get_file_type(file.filename)
             file_path = Path(app.config['UPLOAD_FOLDER']) / secure_fname
-            file.save(str(file_path))
-            logger.info(f"Saved file to {file_path}")
+            
+            try:
+                file.save(str(file_path))
+                logger.info(f"Saved file to {file_path}")
+            except Exception as e:
+                logger.error(f"Error saving file: {str(e)}")
+                return jsonify({'status': 'error', 'message': f'Error saving file: {str(e)}'}), 500
             
             # Extract text using document_processor
-            extracted_text = extract_text_by_file_type(str(file_path), file_type)
+            try:
+                extracted_text = extract_text_by_file_type(str(file_path), file_type)
+                if not extracted_text or not extracted_text.strip():
+                    logger.warning(f"No text extracted from {file.filename}")
+                    return jsonify({'status': 'error', 'message': 'No text could be extracted from file'}), 400
+                logger.info(f"Extracted {len(extracted_text)} characters from {file.filename}")
+            except Exception as e:
+                logger.error(f"Error extracting text: {str(e)}")
+                # Clean up file on extraction failure
+                try:
+                    file_path.unlink()
+                except:
+                    pass
+                return jsonify({'status': 'error', 'message': f'Error extracting text: {str(e)}'}), 500
             
             # Generate preview text
-            preview_text = get_preview_text(extracted_text, max_chars=500)
+            try:
+                preview_text = get_preview_text(extracted_text, max_chars=500)
+            except Exception as e:
+                logger.error(f"Error generating preview: {str(e)}")
+                preview_text = extracted_text[:500]
             
             # Create Document model instance and save to database
-            doc = Document(
-                filename=file.filename,
-                title=file.filename,
-                content_preview=preview_text,
-                file_path=str(file_path),
-                file_type=file_type
-            )
-            db.session.add(doc)
-            db.session.commit()
-            logger.info(f"Created Document entry: {doc.id} for {file.filename}")
+            try:
+                doc = Document(
+                    filename=file.filename,
+                    title=file.filename,
+                    content_preview=preview_text,
+                    file_path=str(file_path),
+                    file_type=file_type
+                )
+                db.session.add(doc)
+                db.session.commit()
+                logger.info(f"Created Document entry: {doc.id} for {file.filename}")
+            except Exception as e:
+                logger.error(f"Error saving document to database: {str(e)}")
+                db.session.rollback()
+                # Clean up file on database failure
+                try:
+                    file_path.unlink()
+                except:
+                    pass
+                return jsonify({'status': 'error', 'message': f'Error saving document: {str(e)}'}), 500
             
             # Generate embeddings and store in ChromaDB
             try:
@@ -234,13 +259,18 @@ def register_routes(app):
                 logger.error(f"Error generating embeddings for document {doc.id}: {str(e)}")
                 # Continue even if embeddings fail, document is still stored
             
-            logger.info(f"Uploaded document: {file.filename}")
-            return redirect(url_for('dashboard'))
+            logger.info(f"Successfully uploaded document: {file.filename}")
+            return jsonify({
+                'status': 'success', 
+                'message': f'Document "{file.filename}" uploaded successfully',
+                'doc_id': doc.id,
+                'redirect': url_for('dashboard')
+            }), 200
         
         except Exception as e:
-            logger.error(f"Error uploading document: {str(e)}")
+            logger.error(f"Unexpected error uploading document: {str(e)}")
             db.session.rollback()
-            return redirect(url_for('dashboard'))
+            return jsonify({'status': 'error', 'message': f'Unexpected error: {str(e)}'}), 500
     
     @app.route('/delete/<int:doc_id>', methods=['POST'])
     def delete_document(doc_id):

@@ -46,7 +46,7 @@ class Config:
     # File Upload Settings
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'static/uploads')
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 52428800))  # 50 MB
-    ALLOWED_EXTENSIONS = {'pdf', 'txt', 'py', 'js', 'ts', 'java', 'cpp', 'c', 'java'}
+    ALLOWED_EXTENSIONS = {'pdf', 'txt', 'py', 'js', 'ts', 'java', 'cpp', 'c', 'json', 'md', 'go', 'rs', 'rb', 'php'}
     
     @staticmethod
     def init_app(app):
