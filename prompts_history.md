@@ -175,3 +175,6 @@
 ### 24-05-2026 13:11
 - **Prompt**: debug
 
+### 24-05-2026 13:50
+- **Prompt**: explain the use of chromadb and sql alchemy
+
