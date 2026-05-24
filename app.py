@@ -340,9 +340,116 @@ def register_routes(app):
           □ Commit to database
         """
         try:
-            # TODO: Day 4 Implementation goes here
+            # Get query and document_id from request
+            data = request.get_json()
+            query = data.get('query', '').strip()
+            document_id = data.get('document_id', None)
             
-            return jsonify({'status': 'ok'})
+            if not query:
+                logger.warning("Chat request with empty query")
+                return jsonify({'error': 'Query cannot be empty'}), 400
+            
+            if not document_id:
+                logger.warning("Chat request with no document_id")
+                return jsonify({'error': 'Document must be selected'}), 400
+            
+            # Verify document exists
+            doc = Document.query.get(document_id)
+            if not doc:
+                logger.warning(f"Chat request for non-existent document {document_id}")
+                return jsonify({'error': 'Document not found'}), 404
+            
+            # Get Settings for temperature, top_p, audience, tone
+            settings = Settings.query.first() or Settings()
+            
+            # Retrieve context from ChromaDB
+            try:
+                context = app.embeddings_service.retrieve_context(
+                    query=query,
+                    doc_id=document_id,
+                    top_k=3
+                )
+                if not context.strip():
+                    logger.warning(f"No context retrieved for document {document_id}")
+                    context = "No relevant context found. Please try rephrasing your question."
+            except Exception as e:
+                logger.error(f"Error retrieving context: {str(e)}")
+                context = "Error retrieving document context. Please try again."
+            
+            # Call AIAgent.generate_response() to get generator
+            try:
+                response_generator = app.ai_agent.generate_response(
+                    query=query,
+                    context=context,
+                    temperature=settings.temperature,
+                    top_p=settings.top_p,
+                    max_tokens=settings.max_tokens_per_response,
+                    audience_level=settings.audience_level,
+                    tone=settings.tone
+                )
+            except Exception as e:
+                logger.error(f"Error initializing response generator: {str(e)}")
+                return jsonify({'error': f'Failed to generate response: {str(e)}'}), 500
+            
+            # Create streaming response
+            def generate_stream():
+                full_response = ""
+                
+                try:
+                    # Collect all chunks from the generator
+                    for chunk in response_generator:
+                        full_response += chunk
+                        # Send chunk to client in Server-Sent Events format
+                        # Format: "data: <message>\n\n"
+                        yield f"data: {chunk}\n\n"
+                    
+                except GeneratorExit:
+                    # Handle client disconnect
+                    logger.info("Client disconnected from chat stream")
+                except Exception as e:
+                    logger.error(f"Error during streaming: {str(e)}")
+                    yield f"data: [ERROR] {str(e)}\n\n"
+                finally:
+                    # After streaming completes, save to database
+                    if full_response:
+                        try:
+                            # Estimate token counts based on response length
+                            tokens_input = len(query.split()) * 2  # Rough estimate: ~2 tokens per word
+                            tokens_output = len(full_response.split()) * 2
+                            
+                            # Create ChatMessage entry
+                            chat_msg = ChatMessage(
+                                document_id=document_id,
+                                query=query,
+                                response=full_response,
+                                tokens_input=tokens_input,
+                                tokens_output=tokens_output,
+                                tokens_used=tokens_input + tokens_output,
+                                temperature=settings.temperature,
+                                top_p=settings.top_p
+                            )
+                            db.session.add(chat_msg)
+                            
+                            # Log usage with UsageTracker
+                            UsageTracker.log_usage(
+                                model_name=app.config.get('DEFAULT_MODEL', 'gemini-pro'),
+                                tokens_input=tokens_input,
+                                tokens_output=tokens_output,
+                                request_type='chat'
+                            )
+                            
+                            # Commit to database
+                            db.session.commit()
+                            logger.info(f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}")
+                        except Exception as e:
+                            logger.error(f"Error saving chat message: {str(e)}")
+                            db.session.rollback()
+            
+            return generate_stream(), 200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no'
+            }
         
         except Exception as e:
             logger.error(f"Error in chat: {str(e)}")
@@ -372,13 +479,86 @@ def register_routes(app):
         □ Return success response or redirect
         """
         try:
-            # TODO: Day 5 Implementation goes here
+            # Get or create Settings entry (id=1)
+            settings = Settings.query.first()
+            if not settings:
+                settings = Settings(id=1)
+                db.session.add(settings)
             
-            return redirect(url_for('dashboard'))
+            # Extract form data from request (JSON or form data)
+            data = request.get_json() if request.is_json else request.form
+            
+            # Update temperature field and validate range (0-2)
+            if 'temperature' in data:
+                temp = float(data['temperature'])
+                if 0.0 <= temp <= 2.0:
+                    settings.temperature = temp
+                else:
+                    logger.warning(f"Invalid temperature value: {temp}")
+                    return jsonify({'error': 'Temperature must be between 0.0 and 2.0'}), 400
+            
+            # Update top_p field and validate range (0-1)
+            if 'top_p' in data:
+                top_p = float(data['top_p'])
+                if 0.0 <= top_p <= 1.0:
+                    settings.top_p = top_p
+                else:
+                    logger.warning(f"Invalid top_p value: {top_p}")
+                    return jsonify({'error': 'Top-p must be between 0.0 and 1.0'}), 400
+            
+            # Update audience_level
+            if 'audience_level' in data:
+                audience = data['audience_level'].lower()
+                if audience in ['beginner', 'intermediate', 'expert']:
+                    settings.audience_level = audience
+                else:
+                    logger.warning(f"Invalid audience_level value: {audience}")
+            
+            # Update tone
+            if 'tone' in data:
+                tone = data['tone'].lower()
+                if tone in ['formal', 'casual', 'technical', 'friendly']:
+                    settings.tone = tone
+                else:
+                    logger.warning(f"Invalid tone value: {tone}")
+            
+            # Update model_choice
+            if 'model_choice' in data:
+                settings.model_choice = data['model_choice']
+            
+            # Update max_tokens_per_response
+            if 'max_tokens_per_response' in data:
+                try:
+                    max_tokens = int(data['max_tokens_per_response'])
+                    if max_tokens > 0:
+                        settings.max_tokens_per_response = max_tokens
+                except ValueError:
+                    logger.warning(f"Invalid max_tokens_per_response value: {data['max_tokens_per_response']}")
+            
+            # Save to database
+            db.session.commit()
+            logger.info(f"Updated settings: temp={settings.temperature}, top_p={settings.top_p}, audience={settings.audience_level}, tone={settings.tone}")
+            
+            # Return success response or redirect
+            if request.is_json:
+                return jsonify({'status': 'success', 'settings': settings.to_dict()}), 200
+            else:
+                return redirect(url_for('dashboard'))
+        
+        except ValueError as e:
+            logger.error(f"Invalid settings value: {str(e)}")
+            if request.is_json:
+                return jsonify({'error': f'Invalid settings value: {str(e)}'}), 400
+            else:
+                return redirect(url_for('dashboard'))
         
         except Exception as e:
             logger.error(f"Error updating settings: {str(e)}")
-            return redirect(url_for('dashboard'))
+            db.session.rollback()
+            if request.is_json:
+                return jsonify({'error': str(e)}), 500
+            else:
+                return redirect(url_for('dashboard'))
     
     # ========================================================================
     # PHASE 2: Extended Features (Days 6-11)
