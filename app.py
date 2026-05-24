@@ -399,68 +399,62 @@ def register_routes(app):
             # Create streaming response
             def generate_stream():
                 full_response = ""
-                token_counts = (0, 0)
                 
                 try:
-                    # For each chunk yielded from response_generator
+                    # Collect all chunks from the generator
                     for chunk in response_generator:
                         full_response += chunk
-                        # Send chunk to client
-                        yield f"data: {jsonify(chunk).data.decode()}\n\n"
-                    
-                    # After streaming completes, get token counts
-                    token_counts = response_generator.send(None) if hasattr(response_generator, 'send') else (0, 0)
+                        # Send chunk to client in Server-Sent Events format
+                        # Format: "data: <message>\n\n"
+                        yield f"data: {chunk}\n\n"
                     
                 except GeneratorExit:
                     # Handle client disconnect
                     logger.info("Client disconnected from chat stream")
                 except Exception as e:
                     logger.error(f"Error during streaming: {str(e)}")
-                    yield f"data: {jsonify({'error': str(e)}).data.decode()}\n\n"
+                    yield f"data: [ERROR] {str(e)}\n\n"
                 finally:
                     # After streaming completes, save to database
-                    try:
-                        # Try to get token counts from the generator's return value
-                        tokens_input = 0
-                        tokens_output = 0
-                        
+                    if full_response:
                         try:
-                            # The generator should have returned token counts
-                            # We'll estimate based on the response length
-                            tokens_input = len(query.split()) * 2  # Rough estimate
+                            # Estimate token counts based on response length
+                            tokens_input = len(query.split()) * 2  # Rough estimate: ~2 tokens per word
                             tokens_output = len(full_response.split()) * 2
-                        except:
-                            pass
-                        
-                        # Create ChatMessage entry
-                        chat_msg = ChatMessage(
-                            document_id=document_id,
-                            query=query,
-                            response=full_response,
-                            tokens_input=tokens_input,
-                            tokens_output=tokens_output,
-                            tokens_used=tokens_input + tokens_output,
-                            temperature=settings.temperature,
-                            top_p=settings.top_p
-                        )
-                        db.session.add(chat_msg)
-                        
-                        # Log usage with UsageTracker
-                        UsageTracker.log_usage(
-                            model_name=app.config.get('DEFAULT_MODEL', 'gemini-pro'),
-                            tokens_input=tokens_input,
-                            tokens_output=tokens_output,
-                            request_type='chat'
-                        )
-                        
-                        # Commit to database
-                        db.session.commit()
-                        logger.info(f"Chat message {chat_msg.id} saved: {tokens_input + tokens_output} tokens")
-                    except Exception as e:
-                        logger.error(f"Error saving chat message: {str(e)}")
-                        db.session.rollback()
+                            
+                            # Create ChatMessage entry
+                            chat_msg = ChatMessage(
+                                document_id=document_id,
+                                query=query,
+                                response=full_response,
+                                tokens_input=tokens_input,
+                                tokens_output=tokens_output,
+                                tokens_used=tokens_input + tokens_output,
+                                temperature=settings.temperature,
+                                top_p=settings.top_p
+                            )
+                            db.session.add(chat_msg)
+                            
+                            # Log usage with UsageTracker
+                            UsageTracker.log_usage(
+                                model_name=app.config.get('DEFAULT_MODEL', 'gemini-pro'),
+                                tokens_input=tokens_input,
+                                tokens_output=tokens_output,
+                                request_type='chat'
+                            )
+                            
+                            # Commit to database
+                            db.session.commit()
+                            logger.info(f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}")
+                        except Exception as e:
+                            logger.error(f"Error saving chat message: {str(e)}")
+                            db.session.rollback()
             
-            return generate_stream(), 200, {'Content-Type': 'text/event-stream'}
+            return generate_stream(), 200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'X-Accel-Buffering': 'no'
+            }
         
         except Exception as e:
             logger.error(f"Error in chat: {str(e)}")
