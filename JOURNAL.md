@@ -1012,3 +1012,8 @@ The code is production-quality for first-year CS students:
 - **Hook Version**: 1.02
 - **Date**: 24-05-2026 12:14
 - **Prompt**: For the chat box. Make sure you dont have to scroll to get to the chatbox. It should always be towards the bottom of the user's screen. Secondly, implement the chatbox aqnd give it full functionality on the frontend side of things and app.py
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 24-05-2026 12:17
+- **Prompt**: The chat box should be at the bottom of the screen, not the website.
