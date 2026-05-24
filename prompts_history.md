@@ -68,3 +68,6 @@
 ### 24-05-2026 11:57
 - **Prompt**: app.py cant run still. I am getting module not found errors. Please fix everything that might cause problems. If its from phase 2, find a way to overlook it. I should be able to run app.py and get a local host link to click
 
+### 24-05-2026 12:05
+- **Prompt**: I can't upload documents anymore please fix it
+
