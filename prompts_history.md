@@ -56,3 +56,6 @@
 ### 24-05-2026 11:49
 - **Prompt**: please make sure that app.py works and is up to phase 1 standards. Nothing from phase 2 I should be able to run the app from local host
 
+### 24-05-2026 11:52
+- **Prompt**: I keep getting this same error each time I run app.py Can you fix it?
+
