@@ -77,3 +77,6 @@
 ### 24-05-2026 12:13
 - **Prompt**: For the chat box. Make sure you dont have to scroll to get to the chatbox. It should always be towards the bottom of the user's screen. Secondly, implement the chatbox aqnd give it full functionality
 
+### 24-05-2026 12:14
+- **Prompt**: For the chat box. Make sure you dont have to scroll to get to the chatbox. It should always be towards the bottom of the user's screen. Secondly, implement the chatbox aqnd give it full functionality on the frontend side of things and app.py
+
