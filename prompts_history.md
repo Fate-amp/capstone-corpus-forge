@@ -47,3 +47,6 @@
 ### 24-05-2026 11:41
 - **Prompt**: Fully implement #file:app.py as dictated by the daily_checklist
 
+### 24-05-2026 11:45
+- **Prompt**: Make document items clickable (add visual selection state). Implement delete button with confirmation dialog. Add event listeners for: [ ] Upload button â†’ show modal [ ] Document click â†’ select document [ ] Delete button â†’ confirm delete + send to backend
+
