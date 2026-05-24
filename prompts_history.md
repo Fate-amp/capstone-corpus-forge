@@ -98,3 +98,6 @@
 ### 24-05-2026 01:18
 - **Prompt**: where do i need to add the test script to see if the chunking of the document is working?
 
+### 24-05-2026 10:43
+- **Prompt**: I need you to make 2 changes in the frontend. First, make the uploading of the documents possible, tell me where I should receive it to validate the file extension and to see if my agent works and finally, make the chat box the size of the screen and scrollable. I don't want the whole page to scroll
+
