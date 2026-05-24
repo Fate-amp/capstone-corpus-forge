@@ -1002,3 +1002,8 @@ The code is production-quality for first-year CS students:
 - **Hook Version**: 1.02
 - **Date**: 24-05-2026 12:07
 - **Prompt**: I cant select a file from my local files. When I click the "click to select file" button it should open my local files and allow me to upload one
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 24-05-2026 12:13
+- **Prompt**: For the chat box. Make sure you dont have to scroll to get to the chatbox. It should always be towards the bottom of the user's screen. Secondly, implement the chatbox aqnd give it full functionality
