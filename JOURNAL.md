@@ -503,3 +503,8 @@ Each day includes cross-functional testing to ensure tasks mesh:
 - **Hook Version**: 1.02
 - **Date**: 24-05-2026 10:43
 - **Prompt**: I need you to make 2 changes in the frontend. First, make the uploading of the documents possible, tell me where I should receive it to validate the file extension and to see if my agent works and finally, make the chat box the size of the screen and scrollable. I don't want the whole page to scroll
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 24-05-2026 10:52
+- **Prompt**: right now, the whole window of the dashboard scrolls, I want the prompt box to be at the bottom of the screen and the chatbox to be scrollable. If you don't understand what I'm saying, ask me questions. Then, I'm still not able to upload files. why?
