@@ -17,8 +17,17 @@ __pycache__/
 # Env and secrets
 .env
 
+# Database files (local development)
+instance/
+corpus_forge.db
+*.db
+
 # ChromaDB persistent storage
+.chromadb/
 chroma_db/
+
+# Uploaded files (local development)
+static/uploads/
 
 # OS/editor files
 .DS_Store
