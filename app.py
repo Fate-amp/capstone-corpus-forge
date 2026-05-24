@@ -186,7 +186,7 @@ def register_routes(app):
         □ Redirect to GET / with success message
         """
         try:
-            # Validate file upload
+            # Check if file exists in request
             if 'file' not in request.files:
                 logger.warning("Upload attempt with no file")
                 return redirect(url_for('dashboard'))
@@ -201,14 +201,45 @@ def register_routes(app):
                 logger.warning(f"Upload attempt with disallowed extension: {file.filename}")
                 return redirect(url_for('dashboard'))
             
-            # TODO: Day 2 Implementation goes here
-            # See checklist above
+            # Save file with secure filename
+            secure_fname = get_secure_filename(file.filename)
+            file_type = get_file_type(file.filename)
+            file_path = Path(app.config['UPLOAD_FOLDER']) / secure_fname
+            file.save(str(file_path))
+            logger.info(f"Saved file to {file_path}")
+            
+            # Extract text using document_processor
+            extracted_text = extract_text_by_file_type(str(file_path), file_type)
+            
+            # Generate preview text
+            preview_text = get_preview_text(extracted_text, max_chars=500)
+            
+            # Create Document model instance and save to database
+            doc = Document(
+                filename=file.filename,
+                title=file.filename,
+                content_preview=preview_text,
+                file_path=str(file_path),
+                file_type=file_type
+            )
+            db.session.add(doc)
+            db.session.commit()
+            logger.info(f"Created Document entry: {doc.id} for {file.filename}")
+            
+            # Generate embeddings and store in ChromaDB
+            try:
+                app.embeddings_service.embed_document(doc.id, extracted_text)
+                logger.info(f"Generated embeddings for document {doc.id}")
+            except Exception as e:
+                logger.error(f"Error generating embeddings for document {doc.id}: {str(e)}")
+                # Continue even if embeddings fail, document is still stored
             
             logger.info(f"Uploaded document: {file.filename}")
             return redirect(url_for('dashboard'))
         
         except Exception as e:
             logger.error(f"Error uploading document: {str(e)}")
+            db.session.rollback()
             return redirect(url_for('dashboard'))
     
     @app.route('/delete/<int:doc_id>', methods=['POST'])
@@ -238,13 +269,39 @@ def register_routes(app):
         □ Redirect to GET /
         """
         try:
-            # TODO: Day 2 Implementation goes here
+            # Query Document by id
+            doc = Document.query.get(doc_id)
+            if not doc:
+                logger.warning(f"Delete attempt for non-existent document {doc_id}")
+                return redirect(url_for('dashboard'))
+            
+            # Delete file from static/uploads/
+            try:
+                file_path = Path(doc.file_path)
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info(f"Deleted file: {doc.file_path}")
+            except Exception as e:
+                logger.error(f"Error deleting file {doc.file_path}: {str(e)}")
+            
+            # Delete embeddings from ChromaDB
+            try:
+                app.embeddings_service.delete_document_embeddings(doc_id)
+                logger.info(f"Deleted embeddings for document {doc_id}")
+            except Exception as e:
+                logger.error(f"Error deleting embeddings for document {doc_id}: {str(e)}")
+            
+            # Delete Document from database (cascade delete ChatMessage)
+            db.session.delete(doc)
+            db.session.commit()
+            logger.info(f"Deleted document {doc_id} from database")
             
             logger.info(f"Deleted document {doc_id}")
             return redirect(url_for('dashboard'))
         
         except Exception as e:
             logger.error(f"Error deleting document {doc_id}: {str(e)}")
+            db.session.rollback()
             return redirect(url_for('dashboard'))
     
     @app.route('/chat', methods=['POST'])
@@ -288,9 +345,122 @@ def register_routes(app):
           □ Commit to database
         """
         try:
-            # TODO: Day 4 Implementation goes here
+            # Get query and document_id from request
+            data = request.get_json()
+            query = data.get('query', '').strip()
+            document_id = data.get('document_id', None)
             
-            return jsonify({'status': 'ok'})
+            if not query:
+                logger.warning("Chat request with empty query")
+                return jsonify({'error': 'Query cannot be empty'}), 400
+            
+            if not document_id:
+                logger.warning("Chat request with no document_id")
+                return jsonify({'error': 'Document must be selected'}), 400
+            
+            # Verify document exists
+            doc = Document.query.get(document_id)
+            if not doc:
+                logger.warning(f"Chat request for non-existent document {document_id}")
+                return jsonify({'error': 'Document not found'}), 404
+            
+            # Get Settings for temperature, top_p, audience, tone
+            settings = Settings.query.first() or Settings()
+            
+            # Retrieve context from ChromaDB
+            try:
+                context = app.embeddings_service.retrieve_context(
+                    query=query,
+                    doc_id=document_id,
+                    top_k=3
+                )
+                if not context.strip():
+                    logger.warning(f"No context retrieved for document {document_id}")
+                    context = "No relevant context found. Please try rephrasing your question."
+            except Exception as e:
+                logger.error(f"Error retrieving context: {str(e)}")
+                context = "Error retrieving document context. Please try again."
+            
+            # Call AIAgent.generate_response() to get generator
+            try:
+                response_generator = app.ai_agent.generate_response(
+                    query=query,
+                    context=context,
+                    temperature=settings.temperature,
+                    top_p=settings.top_p,
+                    max_tokens=settings.max_tokens_per_response,
+                    audience_level=settings.audience_level,
+                    tone=settings.tone
+                )
+            except Exception as e:
+                logger.error(f"Error initializing response generator: {str(e)}")
+                return jsonify({'error': f'Failed to generate response: {str(e)}'}), 500
+            
+            # Create streaming response
+            def generate_stream():
+                full_response = ""
+                token_counts = (0, 0)
+                
+                try:
+                    # For each chunk yielded from response_generator
+                    for chunk in response_generator:
+                        full_response += chunk
+                        # Send chunk to client
+                        yield f"data: {jsonify(chunk).data.decode()}\n\n"
+                    
+                    # After streaming completes, get token counts
+                    token_counts = response_generator.send(None) if hasattr(response_generator, 'send') else (0, 0)
+                    
+                except GeneratorExit:
+                    # Handle client disconnect
+                    logger.info("Client disconnected from chat stream")
+                except Exception as e:
+                    logger.error(f"Error during streaming: {str(e)}")
+                    yield f"data: {jsonify({'error': str(e)}).data.decode()}\n\n"
+                finally:
+                    # After streaming completes, save to database
+                    try:
+                        # Try to get token counts from the generator's return value
+                        tokens_input = 0
+                        tokens_output = 0
+                        
+                        try:
+                            # The generator should have returned token counts
+                            # We'll estimate based on the response length
+                            tokens_input = len(query.split()) * 2  # Rough estimate
+                            tokens_output = len(full_response.split()) * 2
+                        except:
+                            pass
+                        
+                        # Create ChatMessage entry
+                        chat_msg = ChatMessage(
+                            document_id=document_id,
+                            query=query,
+                            response=full_response,
+                            tokens_input=tokens_input,
+                            tokens_output=tokens_output,
+                            tokens_used=tokens_input + tokens_output,
+                            temperature=settings.temperature,
+                            top_p=settings.top_p
+                        )
+                        db.session.add(chat_msg)
+                        
+                        # Log usage with UsageTracker
+                        UsageTracker.log_usage(
+                            model_name=app.config.get('DEFAULT_MODEL', 'gemini-pro'),
+                            tokens_input=tokens_input,
+                            tokens_output=tokens_output,
+                            request_type='chat'
+                        )
+                        
+                        # Commit to database
+                        db.session.commit()
+                        logger.info(f"Chat message {chat_msg.id} saved: {tokens_input + tokens_output} tokens")
+                    except Exception as e:
+                        logger.error(f"Error saving chat message: {str(e)}")
+                        db.session.rollback()
+            
+            return generate_stream(), 200, {'Content-Type': 'text/event-stream'}
         
         except Exception as e:
             logger.error(f"Error in chat: {str(e)}")
@@ -320,13 +490,86 @@ def register_routes(app):
         □ Return success response or redirect
         """
         try:
-            # TODO: Day 5 Implementation goes here
+            # Get or create Settings entry (id=1)
+            settings = Settings.query.first()
+            if not settings:
+                settings = Settings(id=1)
+                db.session.add(settings)
             
-            return redirect(url_for('dashboard'))
+            # Extract form data from request (JSON or form data)
+            data = request.get_json() if request.is_json else request.form
+            
+            # Update temperature field and validate range (0-2)
+            if 'temperature' in data:
+                temp = float(data['temperature'])
+                if 0.0 <= temp <= 2.0:
+                    settings.temperature = temp
+                else:
+                    logger.warning(f"Invalid temperature value: {temp}")
+                    return jsonify({'error': 'Temperature must be between 0.0 and 2.0'}), 400
+            
+            # Update top_p field and validate range (0-1)
+            if 'top_p' in data:
+                top_p = float(data['top_p'])
+                if 0.0 <= top_p <= 1.0:
+                    settings.top_p = top_p
+                else:
+                    logger.warning(f"Invalid top_p value: {top_p}")
+                    return jsonify({'error': 'Top-p must be between 0.0 and 1.0'}), 400
+            
+            # Update audience_level
+            if 'audience_level' in data:
+                audience = data['audience_level'].lower()
+                if audience in ['beginner', 'intermediate', 'expert']:
+                    settings.audience_level = audience
+                else:
+                    logger.warning(f"Invalid audience_level value: {audience}")
+            
+            # Update tone
+            if 'tone' in data:
+                tone = data['tone'].lower()
+                if tone in ['formal', 'casual', 'technical', 'friendly']:
+                    settings.tone = tone
+                else:
+                    logger.warning(f"Invalid tone value: {tone}")
+            
+            # Update model_choice
+            if 'model_choice' in data:
+                settings.model_choice = data['model_choice']
+            
+            # Update max_tokens_per_response
+            if 'max_tokens_per_response' in data:
+                try:
+                    max_tokens = int(data['max_tokens_per_response'])
+                    if max_tokens > 0:
+                        settings.max_tokens_per_response = max_tokens
+                except ValueError:
+                    logger.warning(f"Invalid max_tokens_per_response value: {data['max_tokens_per_response']}")
+            
+            # Save to database
+            db.session.commit()
+            logger.info(f"Updated settings: temp={settings.temperature}, top_p={settings.top_p}, audience={settings.audience_level}, tone={settings.tone}")
+            
+            # Return success response or redirect
+            if request.is_json:
+                return jsonify({'status': 'success', 'settings': settings.to_dict()}), 200
+            else:
+                return redirect(url_for('dashboard'))
+        
+        except ValueError as e:
+            logger.error(f"Invalid settings value: {str(e)}")
+            if request.is_json:
+                return jsonify({'error': f'Invalid settings value: {str(e)}'}), 400
+            else:
+                return redirect(url_for('dashboard'))
         
         except Exception as e:
             logger.error(f"Error updating settings: {str(e)}")
-            return redirect(url_for('dashboard'))
+            db.session.rollback()
+            if request.is_json:
+                return jsonify({'error': str(e)}), 500
+            else:
+                return redirect(url_for('dashboard'))
     
     # ========================================================================
     # PHASE 2: Extended Features (Days 6-11)

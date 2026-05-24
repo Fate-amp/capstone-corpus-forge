@@ -4,28 +4,28 @@
     Displays list of uploaded documents with:
     - Document title and file type
     - Preview of content
-    - Delete button
-    - Click to select document
+    - Delete button with confirmation dialog
+    - Click to select document with visual highlight
     
-    TODO: Day 2 Implementation
-    - Click to select: highlight selected document, update chat context
-    - Delete button: call /delete/<doc_id> endpoint
-    - Show file icon based on type (PDF, TXT, code)
-    - Add sorting options (newest, alphabetical, etc.)
-    - Add search/filter for large lists
+    Day 2 Implementation:
+    ✅ Click to select: highlight selected document, update chat context
+    ✅ Delete button: call /delete/<doc_id> endpoint with confirmation
+    ✅ Visual selection state: 'selected' class applied to active item
+    ✅ Confirmation dialog: custom modal for delete confirmation
+    ✅ Error handling: user feedback for failed deletions
 -->
 
 <div class="documents-list-items">
     {% if documents %}
         {% for doc in documents %}
-        <div class="document-item" data-doc-id="{{ doc.id }}">
+        <div class="document-item" data-doc-id="{{ doc.id }}" data-doc-title="{{ doc.title }}">
             <div class="document-info">
                 <div class="document-title">{{ doc.title }}</div>
                 <div class="document-type">{{ doc.file_type }}</div>
                 <div class="document-preview">{{ doc.content_preview[:80] }}...</div>
             </div>
             <div class="document-actions">
-                <button class="btn btn-danger btn-small delete-doc-btn" data-doc-id="{{ doc.id }}">
+                <button class="btn btn-danger btn-small delete-doc-btn" data-doc-id="{{ doc.id }}" title="Delete this document">
                     Delete
                 </button>
             </div>
@@ -38,27 +38,228 @@
     {% endif %}
 </div>
 
+<!-- Delete Confirmation Dialog Modal -->
+<div id="delete-confirmation-modal" class="modal hidden">
+    <div class="modal-content modal-small">
+        <div class="modal-header">
+            <h3>Confirm Delete</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="delete-doc-name"></strong>?</p>
+            <p style="color: #999; font-size: 0.9rem; margin-top: 1rem;">
+                This action cannot be undone. The document and all associated chat history will be deleted.
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="delete-cancel-btn">Cancel</button>
+            <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // TODO: Day 2 - Implement document selection and deletion
+    // ========================================================================
+    // Document Selection and Deletion Logic (Day 2 Implementation)
+    // ========================================================================
+
+    const deleteConfirmationModal = document.getElementById('delete-confirmation-modal');
+    const deleteConfirmBtn = document.getElementById('delete-confirm-btn');
+    const deleteCancelBtn = document.getElementById('delete-cancel-btn');
+    const deleteDocName = document.getElementById('delete-doc-name');
     
-    // Select document on click
+    let pendingDeleteDocId = null;
+
+    // ========================================================================
+    // Document Item Selection
+    // ========================================================================
+
+    /**
+     * Select a document and update chat context
+     * @param {HTMLElement} itemElement - The document item element
+     * @param {number} docId - Document ID
+     * @param {string} docTitle - Document title
+     */
+    function selectDocument(itemElement, docId, docTitle) {
+        // Remove selected class from all items
+        document.querySelectorAll('.document-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked item
+        itemElement.classList.add('selected');
+        
+        // Update the chat header title
+        const chatTitle = document.getElementById('selected-doc-title');
+        if (chatTitle) {
+            chatTitle.textContent = `📄 ${docTitle}`;
+        }
+        
+        // Store selected document ID in session storage for chat requests
+        sessionStorage.setItem('selectedDocId', docId);
+        sessionStorage.setItem('selectedDocTitle', docTitle);
+        
+        console.log(`Selected document: ${docId} - ${docTitle}`);
+    }
+
+    // Add click event listeners to all document items
     document.querySelectorAll('.document-item').forEach(item => {
-        item.addEventListener('click', function() {
+        item.addEventListener('click', function(e) {
+            // Don't select if clicking on the delete button
+            if (e.target.closest('.delete-doc-btn')) {
+                return;
+            }
+            
             const docId = this.dataset.docId;
-            // TODO: Update selected document, reset chat, update title
-            console.log('Selected document:', docId);
+            const docTitle = this.dataset.docTitle;
+            selectDocument(this, docId, docTitle);
         });
     });
-    
-    // Delete document on button click
+
+    // ========================================================================
+    // Document Deletion
+    // ========================================================================
+
+    /**
+     * Show delete confirmation dialog
+     * @param {number} docId - Document ID to delete
+     * @param {string} docName - Document name for display
+     */
+    function showDeleteConfirmation(docId, docName) {
+        pendingDeleteDocId = docId;
+        deleteDocName.textContent = docName;
+        deleteConfirmationModal.classList.remove('hidden');
+    }
+
+    /**
+     * Hide delete confirmation dialog
+     */
+    function hideDeleteConfirmation() {
+        pendingDeleteDocId = null;
+        deleteConfirmationModal.classList.add('hidden');
+    }
+
+    /**
+     * Delete document by sending POST request to /delete/<docId>
+     * @param {number} docId - Document ID to delete
+     */
+    async function deleteDocument(docId) {
+        try {
+            // Show loading state
+            deleteConfirmBtn.disabled = true;
+            deleteConfirmBtn.textContent = 'Deleting...';
+
+            // Send DELETE request to backend
+            const response = await fetch(`/delete/${docId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Success - document deleted on backend
+                console.log(`Document ${docId} deleted successfully`);
+                
+                // Remove the document item from DOM
+                const docItem = document.querySelector(`[data-doc-id="${docId}"]`);
+                if (docItem) {
+                    docItem.style.animation = 'fadeOut 0.3s ease-out';
+                    setTimeout(() => {
+                        docItem.remove();
+                        
+                        // If the deleted document was selected, clear the selection
+                        if (sessionStorage.getItem('selectedDocId') === String(docId)) {
+                            sessionStorage.removeItem('selectedDocId');
+                            sessionStorage.removeItem('selectedDocTitle');
+                            const chatTitle = document.getElementById('selected-doc-title');
+                            if (chatTitle) {
+                                chatTitle.textContent = 'Select a document to begin';
+                            }
+                        }
+                        
+                        // Show success notification
+                        showNotification('✅ Document deleted successfully', 'success');
+                    }, 300);
+                }
+                
+                hideDeleteConfirmation();
+            } else {
+                // Error response from backend
+                const error = await response.text();
+                showNotification(`❌ Failed to delete document: ${error || 'Unknown error'}`, 'error');
+                hideDeleteConfirmation();
+            }
+        } catch (error) {
+            console.error('Error deleting document:', error);
+            showNotification(`❌ Error deleting document: ${error.message}`, 'error');
+            hideDeleteConfirmation();
+        } finally {
+            deleteConfirmBtn.disabled = false;
+            deleteConfirmBtn.textContent = 'Delete';
+        }
+    }
+
+    // Delete button click handlers
     document.querySelectorAll('.delete-doc-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
+            // Prevent event bubbling to document item click handler
             e.stopPropagation();
+            
             const docId = this.dataset.docId;
-            if (confirm('Delete this document?')) {
-                // TODO: Send POST /delete/<docId> request
-                console.log('Deleting document:', docId);
-            }
+            const docName = this.closest('.document-item').dataset.docTitle;
+            
+            // Show confirmation dialog
+            showDeleteConfirmation(docId, docName);
         });
     });
+
+    // Confirmation dialog buttons
+    deleteConfirmBtn.addEventListener('click', () => {
+        if (pendingDeleteDocId !== null) {
+            deleteDocument(pendingDeleteDocId);
+        }
+    });
+
+    deleteCancelBtn.addEventListener('click', hideDeleteConfirmation);
+
+    // Close modal when X button clicked
+    deleteConfirmationModal.querySelector('.modal-close').addEventListener('click', hideDeleteConfirmation);
+
+    // Close modal when clicking outside (on dark overlay)
+    deleteConfirmationModal.addEventListener('click', (e) => {
+        if (e.target === deleteConfirmationModal) {
+            hideDeleteConfirmation();
+        }
+    });
+
+    // ========================================================================
+    // Notification Toast System (imported from dashboard.html)
+    // ========================================================================
+
+    /**
+     * Show temporary toast notification
+     * Note: This function may already exist in dashboard.html
+     * Falls back gracefully if not defined
+     */
+    if (typeof showNotification === 'undefined') {
+        window.showNotification = function(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            notification.setAttribute('role', 'alert');
+            document.body.appendChild(notification);
+            
+            // Trigger animation
+            requestAnimationFrame(() => {
+                notification.classList.add('show');
+            });
+            
+            // Auto-remove after 4 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        };
+    }
 </script>

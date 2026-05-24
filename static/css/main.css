@@ -669,6 +669,35 @@ body {
     animation: modalSlideIn 0.3s ease-out;
 }
 
+.modal-content.modal-small {
+    max-width: 400px;
+}
+
+.modal-body {
+    margin: 1.5rem 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.modal-body p {
+    margin-bottom: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+    margin-top: 1.5rem;
+}
+
+.modal-footer .btn {
+    flex: 0 1 auto;
+    min-width: 100px;
+}
+
 @keyframes modalSlideIn {
     from {
         opacity: 0;
@@ -677,6 +706,17 @@ body {
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
     }
 }
 

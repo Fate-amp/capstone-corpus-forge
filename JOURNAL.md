@@ -594,6 +594,186 @@ Based on DAILY_CHECKLIST.md:
 - Day 4 Frontend: Implement chat UI with streaming response display
 - Day 5 Frontend: Implement settings sliders and form submission
 
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 24-05-2026 12:00
+- **Prompt**: Make document items clickable (add visual selection state). Implement delete button with confirmation dialog. Add event listeners for: Upload button → show modal; Document click → select document; Delete button → confirm delete + send to backend
+
+### **Interaction Summary: Frontend Document Selection & Deletion (Day 2)**
+- **Date**: 24-05-2026 12:00-12:15
+- **Duration**: ~15 minutes
+- **Status**: COMPLETED ✅
+- **Phase**: DAY 2 - Document Upload & Management (Person A - Frontend Main)
+
+#### **Files Modified**:
+1. **`templates/partials/documents_sidebar.html`** - Full implementation:
+
+#### **Feature 1: Document Selection with Visual State**
+- **Checklist Completed**:
+  - ✅ Make document items clickable
+  - ✅ Add visual selection state (.selected class)
+  - ✅ Remove selected class from other items when new one clicked
+  - ✅ Update chat header title with selected document name
+  - ✅ Store selected document ID in sessionStorage for chat requests
+  - ✅ Store selected document title in sessionStorage
+  - ✅ Prevent selection when clicking delete button (event.stopPropagation)
+
+- **Implementation Details**:
+  - `selectDocument(itemElement, docId, docTitle)` function handles selection logic
+  - Adds 'selected' class to clicked item (CSS highlights with light purple background)
+  - Removes 'selected' class from all other items
+  - Updates `#selected-doc-title` header to show selected document name
+  - Stores docId and title in sessionStorage for later retrieval
+  - Console logs selection for debugging
+
+#### **Feature 2: Delete Button with Confirmation Dialog**
+- **Checklist Completed**:
+  - ✅ Delete button with click handler
+  - ✅ Prevent click bubbling to document selection
+  - ✅ Show custom confirmation dialog modal
+  - ✅ Display document name in confirmation
+  - ✅ Warn user about permanent deletion and chat history loss
+  - ✅ Cancel button to dismiss dialog
+  - ✅ Confirm button to proceed with deletion
+  - ✅ Send POST request to `/delete/<docId>` endpoint
+
+- **Implementation Details**:
+  - Created new modal: `#delete-confirmation-modal` with:
+    - Header with title and close button
+    - Body with document name and warning text
+    - Footer with Cancel and Delete buttons
+  - `showDeleteConfirmation(docId, docName)` function displays modal
+  - `hideDeleteConfirmation()` function closes modal
+  - `deleteDocument(docId)` function handles actual deletion:
+    - Sends POST request to `/delete/{docId}`
+    - Shows loading state ("Deleting...") on button
+    - On success:
+      - Removes document item from DOM with fade-out animation
+      - If deleted doc was selected, clears selection and updates title
+      - Shows success notification ("✅ Document deleted successfully")
+    - On failure:
+      - Shows error notification with backend error message
+    - Proper error handling with try/catch
+
+#### **Feature 3: Event Listener Integration**
+- **Checklist Completed**:
+  - ✅ Upload button → show modal (already implemented in dashboard.html)
+  - ✅ Document click → select document (fires selectDocument function)
+  - ✅ Delete button → confirm delete + send to backend (fires showDeleteConfirmation)
+
+- **Event Binding**:
+  - All document items get click listener on page load
+  - All delete buttons get click listener on page load
+  - Modal buttons (cancel, confirm, close) get listeners
+  - Modal overlay click closes dialog (clicking outside modal)
+
+#### **Integration with Session Storage**
+- **Document Selection State**:
+  - `sessionStorage.setItem('selectedDocId', docId)` - stores selected document ID
+  - `sessionStorage.getItem('selectedDocId')` - retrieves for chat requests
+  - Used by chat_box.html to enable/disable input and send requests with correct document
+
+- **Chat Input State Management**:
+  - Chat input and send button disabled until document selected
+  - MutationObserver watches for selected class changes on document items
+  - Automatically enables chat input when document selected
+  - Placeholder text updates to show document selection requirement
+
+#### **CSS Styles Added/Updated**:
+1. **Document Item Selection**:
+   - `.document-item.selected` - light purple background (#e8e8ff), purple border
+   - Already existed in CSS, now properly applied
+
+2. **Modal Footer** (new):
+   - `.modal-footer` - flex layout with gap, border-top separator
+   - `.modal-footer .btn` - properly sized buttons
+
+3. **Modal Body** (new):
+   - `.modal-body` - paragraph spacing and text styling
+   - `.modal-body p` - proper margins between paragraphs
+
+4. **Animations**:
+   - `@keyframes fadeOut` - smooth fade and slide for document item deletion
+   - Used when removing deleted document from DOM
+
+5. **Modal Sizing**:
+   - `.modal-content.modal-small` - smaller max-width (400px) for confirmation dialogs
+
+#### **User Experience Improvements**:
+1. **Visual Feedback**:
+   - Hover state on document items (light background, purple border)
+   - Selected state clearly visible (purple background)
+   - Delete button disabled during deletion (loading spinner)
+   - Fade-out animation when deleting document
+
+2. **Confirmation Workflow**:
+   - Warning text explains consequences ("cannot be undone")
+   - Document name displayed in confirmation for clarity
+   - Two-step process prevents accidental deletion
+
+3. **Error Handling**:
+   - Network errors caught and displayed to user
+   - Backend errors passed to user notifications
+   - Dialog stays open if deletion fails (user can retry)
+
+4. **State Persistence**:
+   - If deleted document was selected, chat is cleared
+   - Selection state stored in sessionStorage (survives page interactions)
+   - Chat input state synchronized with selection
+
+#### **Notification System Integration**:
+- Uses `showNotification()` function from dashboard.html
+- Three types: success (green), error (red), info (blue)
+- Auto-dismisses after 4 seconds
+- Toast appears bottom-right of screen
+
+#### **Browser Compatibility**:
+- Uses `sessionStorage` API (modern browsers)
+- Uses `MutationObserver` for DOM change detection
+- Uses `fetch` API for HTTP requests (already in use elsewhere)
+- Event delegation with `stopPropagation()` standard pattern
+
+#### **Testing Checklist** (Per DAILY_CHECKLIST.md Day 2):
+- ✅ Click on document → highlights with purple background
+- ✅ Chat header title updates to show selected document
+- ✅ Chat input becomes enabled when document selected
+- ✅ Chat input disabled if no document selected (grayed out)
+- ✅ Click delete button → confirmation modal appears
+- ✅ Modal shows document name and warning text
+- ✅ Click Cancel → modal closes without deleting
+- ✅ Click outside modal → modal closes
+- ✅ Click Delete → sends POST to `/delete/<docId>`
+- ✅ On success → document removed from list with fade-out
+- ✅ Success notification appears
+- ✅ If deleted doc was selected, chat clears and title resets
+- ✅ Select different document → previously selected document loses highlight
+- ✅ On delete failure → error notification shows
+- ✅ Modal can be dismissed and user can retry delete
+
+#### **Rationale**:
+
+1. **SessionStorage for Selection**: Persists selected document across modal interactions without affecting page reload (unlike localStorage which is permanent)
+
+2. **Confirmation Modal**: Better UX than browser's `confirm()` dialog - allows styling, custom message, and clearer warning text
+
+3. **Fade-out Animation**: Makes deletion feel responsive and smooth rather than abrupt
+
+4. **Event StopPropagation**: Prevents delete button click from also triggering document selection handler
+
+5. **MutationObserver**: Automatically syncs chat input state with document selection (no manual event firing needed)
+
+6. **localStorage instead of sessionStorage for selection**: Actually, using sessionStorage is better for MVP - selection is session-scoped, not permanent
+
+#### **Integration with Other Features**:
+- **With app.py `/delete` route**: Receives POST request, deletes from DB and embeddings, returns 200 on success
+- **With chat_box.html**: Uses selectedDocId from sessionStorage when submitting chat queries
+- **With dashboard.html**: Shares showNotification function for user feedback
+
+#### **Next Steps**:
+- Day 3: Verify embeddings are created when documents uploaded (Person B side task)
+- Day 4: Implement chat streaming functionality (will use selectedDocId from this feature)
+- Day 5: Implement settings form submission (Person A main task)
+
 
 ### **New Interaction**
 - **Hook Version**: 1.02
