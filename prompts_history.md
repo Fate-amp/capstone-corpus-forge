@@ -104,3 +104,6 @@
 ### 24-05-2026 10:52
 - **Prompt**: right now, the whole window of the dashboard scrolls, I want the prompt box to be at the bottom of the screen and the chatbox to be scrollable. If you don't understand what I'm saying, ask me questions. Then, I'm still not able to upload files. why?
 
+### 24-05-2026 11:04
+- **Prompt**: I need you to explain to me why the upload of the documents is not working, and point out the exact lines in the code where that's happening and explain why
+
