@@ -166,3 +166,6 @@
 ### 24-05-2026 12:53
 - **Prompt**: fix this file so that when its run it opens the website on any laptop that has this folder. It should install prerequisits if they aren't there and should give the local host link
 
+### 24-05-2026 12:59
+- **Prompt**: run.bat is not working and is causing app.py not run anymore. can you please fix that and change the run.bat code so that it works on this project? Also make sure app.py is working and that I have all the requirements.
+
