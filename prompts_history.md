@@ -15,3 +15,6 @@
 ### 18-05-2026 11:44
 - **Prompt**: Revise the daily checklist from day 2 so that person A works mainly on frontend with a side of AI/embeddings, Person B mainly AI/embeddings with a side of backend, and Person C gets backend and a side of frontend. Make sure that whatever they work on mesh together properly
 
+### 24-05-2026 12:26
+- **Prompt**: help me fix teh corpus forge db issue thats preventing me from merging
+
