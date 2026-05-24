@@ -12,8 +12,7 @@ TODO: Add caching for repeated queries
 TODO: Add structured output parsing
 """
 
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 import logging
 from typing import Dict
 
