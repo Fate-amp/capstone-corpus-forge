@@ -13,7 +13,7 @@ TODO: Add metadata filtering for more precise retrieval
 TODO: Add re-ranking of retrieved chunks
 """
 
-from google import genai
+import google.generativeai as genai
 import chromadb
 import logging
 from typing import List, Tuple
