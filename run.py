@@ -100,14 +100,14 @@ def create_venv():
 def upgrade_pip():
     """Upgrade pip to latest version."""
     pip_path = get_pip_executable()
-    print_info("Upgrading pip...")
+    print_info("Upgrading pip (optional)...")
     try:
         subprocess.check_call([str(pip_path), "install", "--upgrade", "pip"])
         print_success("pip upgraded")
-        return True
     except Exception as e:
-        print_error(f"Failed to upgrade pip: {e}")
-        return False
+        # Non-critical - continue anyway
+        print_info(f"pip upgrade skipped (not critical): {type(e).__name__}")
+    return True
 
 def install_requirements():
     """Install required packages from requirements.txt."""
@@ -177,11 +177,9 @@ def main():
         print_error("Failed to setup virtual environment")
         sys.exit(1)
     
-    # Step 2: Upgrade pip
+    # Step 2: Upgrade pip (non-critical)
     print_header("Step 2: Upgrade pip")
-    if not upgrade_pip():
-        print_error("Failed to upgrade pip")
-        sys.exit(1)
+    upgrade_pip()  # Don't exit if this fails
     
     # Step 3: Install requirements
     print_header("Step 3: Install Dependencies")
