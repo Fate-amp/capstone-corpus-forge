@@ -88,12 +88,12 @@
                         accept=".pdf,.txt,.py,.js,.json,.md,.cpp,.java"
                         required
                     >
-                    <span class="file-input-label">
+                    <label for="file-input" class="file-input-label">
                         <svg class="file-icon" viewBox="0 0 24 24" width="20" height="20">
                             <path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
                         </svg>
                         <span id="file-name-display">Click to select file</span>
-                    </span>
+                    </label>
                 </div>
                 <div id="file-validation-feedback" class="validation-feedback hidden"></div>
             </div>
@@ -265,18 +265,29 @@
                 body: formData
             });
             
-            if (response.ok) {
-                showNotification('✅ File uploaded successfully!', 'success');
+            // Parse JSON response
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                // If not JSON, try text
+                const text = await response.text();
+                showNotification(`❌ Upload failed: ${text}`, 'error');
+                throw new Error(`Invalid response: ${text}`);
+            }
+            
+            if (data.status === 'success') {
+                showNotification(data.message, 'success');
                 uploadModal.classList.add('hidden');
                 uploadForm.reset();
                 fileNameDisplay.textContent = 'Click to select file';
                 validationFeedback.classList.add('hidden');
                 
-                // Optionally refresh document list
+                // Refresh document list after upload
                 setTimeout(() => location.reload(), 1500);
             } else {
-                const error = await response.text();
-                showNotification(`❌ Upload failed: ${error}`, 'error');
+                showNotification(`❌ ${data.message || 'Upload failed'}`, 'error');
+                console.error('Upload error:', data);
             }
         } catch (error) {
             showNotification(`❌ Error: ${error.message}`, 'error');

@@ -45,6 +45,45 @@
 ### 20-05-2026 10:23
 - **Prompt**: can you fix this error?
 
+### 24-05-2026 11:41
+- **Prompt**: Fully implement #file:app.py as dictated by the daily_checklist
+
+### 24-05-2026 11:45
+- **Prompt**: Make document items clickable (add visual selection state). Implement delete button with confirmation dialog. Add event listeners for: [ ] Upload button â†’ show modal [ ] Document click â†’ select document [ ] Delete button â†’ confirm delete + send to backend
+
+### 24-05-2026 11:48
+- **Prompt**: please make sure that app.py works and is up to phase 1 standards. Nothing from phase 2
+
+### 24-05-2026 11:49
+- **Prompt**: please make sure that app.py works and is up to phase 1 standards. Nothing from phase 2 I should be able to run the app from local host
+
+### 24-05-2026 11:52
+- **Prompt**: I keep getting this same error each time I run app.py Can you fix it?
+
+### 24-05-2026 11:54
+- **Prompt**: debug
+
+### 24-05-2026 11:54
+- **Prompt**: debug
+
+### 24-05-2026 11:57
+- **Prompt**: app.py cant run still. I am getting module not found errors. Please fix everything that might cause problems. If its from phase 2, find a way to overlook it. I should be able to run app.py and get a local host link to click
+
+### 24-05-2026 12:05
+- **Prompt**: I can't upload documents anymore please fix it
+
+### 24-05-2026 12:07
+- **Prompt**: I cant select a file from my local files. When I click the "click to select file" button it should open my local files and allow me to upload one
+
+### 24-05-2026 12:13
+- **Prompt**: For the chat box. Make sure you dont have to scroll to get to the chatbox. It should always be towards the bottom of the user's screen. Secondly, implement the chatbox aqnd give it full functionality
+
+### 24-05-2026 12:14
+- **Prompt**: For the chat box. Make sure you dont have to scroll to get to the chatbox. It should always be towards the bottom of the user's screen. Secondly, implement the chatbox aqnd give it full functionality on the frontend side of things and app.py
+
+### 24-05-2026 12:17
+- **Prompt**: The chat box should be at the bottom of the screen, not the website.
+
 ### 15-05-2026 10:43
 - **Prompt**: activate the journal logger
 

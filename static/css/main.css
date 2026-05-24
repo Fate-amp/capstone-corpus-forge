@@ -14,6 +14,13 @@
 */
 
 /* Reset & Base Styles */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -31,7 +38,9 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
 }
 
 .app-header {
@@ -40,6 +49,7 @@ body {
     padding: 2rem;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
 }
 
 .app-title {
@@ -57,6 +67,7 @@ body {
     flex: 1;
     display: flex;
     overflow: hidden;
+    width: 100%;
 }
 
 .app-footer {
@@ -65,6 +76,7 @@ body {
     text-align: center;
     padding: 1rem;
     font-size: 0.9rem;
+    flex-shrink: 0;
 }
 
 /* Dashboard Layout */
@@ -75,6 +87,7 @@ body {
     height: 100%;
     width: 100%;
     background-color: #ddd;
+    overflow: hidden;
 }
 
 .sidebar {
@@ -103,10 +116,15 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    height: 100%;
 }
 
 .chat-section {
     padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
 }
 
 .chat-header {
@@ -178,13 +196,17 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
 }
 
 .chat-history {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     margin-bottom: 1.5rem;
     padding-right: 0.5rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .chat-message {
@@ -224,7 +246,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 200px;
+    flex-grow: 1;
     color: #999;
 }
 
@@ -232,6 +254,8 @@ body {
 .chat-input-area {
     padding-top: 1rem;
     border-top: 1px solid #eee;
+    flex-shrink: 0;
+    background-color: white;
 }
 
 .chat-input {
@@ -669,6 +693,35 @@ body {
     animation: modalSlideIn 0.3s ease-out;
 }
 
+.modal-content.modal-small {
+    max-width: 400px;
+}
+
+.modal-body {
+    margin: 1.5rem 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.modal-body p {
+    margin-bottom: 1rem;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+    margin-top: 1.5rem;
+}
+
+.modal-footer .btn {
+    flex: 0 1 auto;
+    min-width: 100px;
+}
+
 @keyframes modalSlideIn {
     from {
         opacity: 0;
@@ -677,6 +730,17 @@ body {
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
     }
 }
 
