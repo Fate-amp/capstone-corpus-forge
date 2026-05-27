@@ -252,3 +252,6 @@
 ### 27-05-2026 20:29
 - **Prompt**: they're still not working
 
+### 27-05-2026 20:30
+- **Prompt**: docx and pytesseract cannot be resolved in this file
+
