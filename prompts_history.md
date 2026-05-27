@@ -166,3 +166,6 @@
 ### 27-05-2026 14:18
 - **Prompt**: I implemented the quiz generation. add validation and parsing and tell me how the prompt can be improved. Right now, what would make the agent hallucinate based on my current prompt?
 
+### 27-05-2026 18:43
+- **Prompt**: in this file, list the main fundamental things this file should be doing that are essential to the app working and they're not implemented right now Then pinpoint the lines that should be doing them
+
