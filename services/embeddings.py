@@ -14,7 +14,7 @@ TODO: Add re-ranking of retrieved chunks
 """
 
 import os
-import google.generativeai as genai
+from google import genai
 import chromadb
 import logging
 from typing import List, Tuple

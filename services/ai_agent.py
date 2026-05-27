@@ -12,11 +12,12 @@ TODO: Add caching for repeated queries
 TODO: Add structured output parsing
 """
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 import logging
 import json
 import re
-from typing import Dict
+from typing import Dict, Generator
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +50,16 @@ class AIAgent:
         if not api_key:
             raise ValueError("Google api key is missing")
         
-        # Configure the genai library with API key
-        genai.configure(api_key=api_key)
+        # Initialize the genai client with API key
+        self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
         
         # Test the model is available
         try:
-            model = genai.GenerativeModel(self.model_name)
-            # Test with a simple request to verify API access
-            model.generate_content("test")
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents="test"
+            )
         except Exception as e:
             raise RuntimeError("Model failed to initialize") from e
         
@@ -113,18 +115,16 @@ QUESTION:
 
 Please answer the question using ONLY the context provided above. If the answer is not in the context, say so."""
             
-            # Step 3: Create the model instance
-            model = genai.GenerativeModel(self.model_name)
-            
-            # Step 4: Call Google Gemini API with streaming
-            response = model.generate_content(
-                full_message,
-                stream=True,
-                generation_config=genai.types.GenerationConfig(
+            # Step 3: Call Google Gemini API with streaming
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=full_message,
+                config=types.GenerateContentConfig(
                     temperature=temperature,
                     top_p=top_p,
                     max_output_tokens=max_tokens,
-                )
+                ),
+                stream=True
             )
             
             # Step 5: Yield chunks as they arrive
@@ -185,8 +185,10 @@ Please answer the question using ONLY the context provided above. If the answer 
         TODO: Cache token counts for repeated text
         """
         try:
-            model = genai.GenerativeModel(self.model_name)
-            response = model.count_tokens(text)
+            response = self.client.models.count_tokens(
+                model=self.model_name,
+                contents=text
+            )
             return response.total_tokens
         except Exception as e:
             logger.error(f"Error counting tokens: {str(e)}")
