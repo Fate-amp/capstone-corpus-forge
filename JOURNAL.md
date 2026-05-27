@@ -40,8 +40,19 @@
 - **Date**: 18-05-2026 11:26
 - **Prompt**: Now based on what you suggested us, create the whole skeleton of the project, with TODOs and clear docstrings so that the developer is clear on how to implement it
 
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 13:54
+- **User**: default_user
+- **Prompt**: in my current function, I'm returning the raw text response, should I parse it here? I haven't done the frontend and I don't know how the response is supposed to be received by the frontend
 ---
 
+- **CoPilot Mode**: Ask
+- **CoPilot Model**: GPT-5.4 mini
+- **Socratic Mode**: ON
+- **Changes Made**: No code changes. Reviewed the flashcards function contract and explained the missing parsing, return shape, and prompt constraints.
+- **Context and Reasons for Changes**: User asked whether raw model text should be parsed in the AI service and requested a clear step-by-step gap analysis plus prompt improvement notes.
 ### **Interaction Summary: Project Skeleton Creation**
 - **Date**: 18-05-2026 11:30-12:15
 - **Duration**: ~45 minutes
@@ -1209,3 +1220,8 @@ The code is production-quality for first-year CS students:
 - **Hook Version**: 1.02
 - **Date**: 27-05-2026 13:53
 - **Prompt**: in my current function, I'm returning  the raw text response, should I parse it here? I haven't done the frontend and I don't know how the response is supposed to be received by the frontend Tell me what else this function is supposed to be doing that it's not, in clear steps also, tell me where my pormpt needs improvement
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 14:05
+- **Prompt**: can you add the try, except block after the prompt and explain the flow?
