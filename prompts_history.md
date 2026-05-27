@@ -184,3 +184,6 @@
 ### 27-05-2026 18:28
 - **Prompt**: I got an error when I tried to open the app. I attached a screenshot above. Please fix the error and explain why it happened
 
+### 27-05-2026 18:44
+- **Prompt**: Can you explain to me why i get a server error instead of an answer each time I try to prompt the ai? And how can I fix it? Is it more of a frontend problem or ai embeddinsg problem?
+
