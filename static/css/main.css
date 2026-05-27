@@ -403,7 +403,7 @@ body {
     border-radius: 3px;
     background: var(--color-border);
     outline: none;
-    -webkit-appearance: none;
+    
 }
 
 .slider::-webkit-slider-thumb {
