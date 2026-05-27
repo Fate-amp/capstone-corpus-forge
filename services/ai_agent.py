@@ -115,7 +115,8 @@ QUESTION:
 
 Please answer the question using ONLY the context provided above. If the answer is not in the context, say so."""
             
-            # Step 3: Call Google Gemini API with streaming
+            # Step 3: Call Google Gemini API 
+            # Note: stream=True removed - use streaming_content if available
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=full_message,
@@ -124,13 +125,19 @@ Please answer the question using ONLY the context provided above. If the answer 
                     top_p=top_p,
                     max_output_tokens=max_tokens,
                 ),
-                stream=True
             )
             
-            # Step 5: Yield chunks as they arrive
-            for chunk in response:
-                if chunk.text:
-                    yield chunk.text
+            # Step 5: Return the response text as a generator
+            # For now, yield the entire response as one chunk (no character-based streaming)
+            # This ensures the SSE format remains correct: "data: <full_message>\n\n"
+            if hasattr(response, 'text'):
+                text = response.text
+                if text:
+                    yield text
+                else:
+                    yield "[No response received]"
+            else:
+                yield "[No response received]"
                     
             logger.info("Response generation completed")
             
@@ -237,7 +244,13 @@ Please answer the question using ONLY the context provided above. If the answer 
                 audience_level=audience_level,
             )
 
-            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            # Consume the generator to get the full response
+            raw = ""
+            if isinstance(ai_resp, dict):
+                raw = ai_resp.get('text', '')
+            else:
+                for chunk in ai_resp:
+                    raw += chunk
             raw = raw.strip()
 
             # Remove accidental markdown fences the model may include
@@ -315,7 +328,13 @@ Please answer the question using ONLY the context provided above. If the answer 
                 audience_level=audience_level,
             )
 
-            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            # Consume the generator to get the full response
+            raw = ""
+            if isinstance(ai_resp, dict):
+                raw = ai_resp.get('text', '')
+            else:
+                for chunk in ai_resp:
+                    raw += chunk
             raw = raw.strip()
 
             # Remove accidental markdown fences
@@ -410,7 +429,13 @@ CODE:
                 audience_level=audience_level,
             )
 
-            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            # Consume the generator to get the full response
+            raw = ""
+            if isinstance(ai_resp, dict):
+                raw = ai_resp.get('text', '')
+            else:
+                for chunk in ai_resp:
+                    raw += chunk
             raw = raw.strip()
 
             # Remove accidental markdown fences
