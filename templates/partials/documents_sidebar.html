@@ -99,6 +99,11 @@
         sessionStorage.setItem('selectedDocId', docId);
         sessionStorage.setItem('selectedDocTitle', docTitle);
         
+        // Update dashboard manager with selected document
+        if (window.dashboardManager) {
+            window.dashboardManager.setSelectedDocument(docId, docTitle);
+        }
+        
         // Dispatch custom event so chat box can update its state
         document.dispatchEvent(new CustomEvent('documentSelected', { detail: { docId, docTitle } }));
         

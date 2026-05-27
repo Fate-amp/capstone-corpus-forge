@@ -827,3 +827,784 @@ body {
         font-size: 1.8rem;
     }
 }
+
+/* ========================================================================
+   LEARNING TOOLBAR - NotebookLM Style
+   ======================================================================== */
+
+.header-top {
+    margin-bottom: 0.5rem;
+}
+
+.learning-toolbar {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #f0f0f0;
+    animation: slideDown 0.3s ease-out;
+}
+
+.learning-toolbar.hidden {
+    display: none;
+}
+
+.learning-toolbar.visible {
+    display: flex;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 1.5px solid #ddd;
+    color: #333;
+}
+
+.btn-outline:hover:not(:disabled) {
+    background-color: #f5f5f5;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* ========================================================================
+   MODAL IMPROVEMENTS - Full Screen & Large
+   ======================================================================== */
+
+.modal-lg {
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content-fullscreen {
+    max-width: 90%;
+    width: 900px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 2rem;
+    border-bottom: 1px solid #e8e8e8;
+    background-color: #fafafa;
+}
+
+.modal-header > div:first-child {
+    flex: 1;
+}
+
+.modal-header h3 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: #333;
+}
+
+.modal-subtitle {
+    font-size: 0.95rem;
+    color: #999;
+    margin-top: 0.5rem;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background-color: white;
+}
+
+/* ========================================================================
+   FLASHCARDS - NotebookLM Style
+   ======================================================================== */
+
+.flashcards-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+}
+
+.flashcards-header h3 {
+    color: white;
+}
+
+.flashcards-header .modal-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.flashcards-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.loading-state p {
+    margin-top: 1rem;
+    color: #666;
+}
+
+.loading-state.hidden {
+    display: none;
+}
+
+.flashcards-study {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.flashcards-study.hidden {
+    display: none;
+}
+
+.progress-section {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.progress-bar-wrap {
+    background: #e0e0e0;
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 0.8rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-label {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.flashcard-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem 0;
+}
+
+.flashcard {
+    perspective: 1000px;
+    cursor: pointer;
+    height: 320px;
+    margin-bottom: 2rem;
+}
+
+.flashcard-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.flashcard-inner.flipped {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.flashcard-front {
+    background: white;
+    border: 2px solid #667eea;
+}
+
+.flashcard-back {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: rotateY(180deg);
+}
+
+.card-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.card-text {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    word-wrap: break-word;
+}
+
+.flip-hint {
+    font-size: 0.75rem;
+    opacity: 0.45;
+    margin-top: 1.5rem;
+}
+
+.card-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+.card-nav .btn {
+    min-width: 120px;
+}
+
+.flashcard-actions {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* ========================================================================
+   QUIZ - NotebookLM Style
+   ======================================================================== */
+
+.quiz-header {
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    color: white;
+    padding: 2rem;
+}
+
+.quiz-header h3 {
+    color: white;
+}
+
+.quiz-header .modal-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.quiz-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.quiz-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.quiz-form.hidden {
+    display: none;
+}
+
+.quiz-progress {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e0e0e0;
+}
+
+.progress-dot.active {
+    background: #f57c00;
+}
+
+.question-card {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #f57c00;
+    animation: slideDown 0.3s ease-out;
+}
+
+.question-number {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #f57c00;
+    margin-bottom: 0.8rem;
+}
+
+.question-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.option-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    cursor: pointer;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1.5px solid #e0e0e0;
+    transition: all 0.2s;
+}
+
+.option-label:hover {
+    border-color: #f57c00;
+    background-color: #fef3e0;
+}
+
+.option-label input[type="radio"] {
+    display: none;
+}
+
+.option-label:has(input:checked) {
+    border-color: #f57c00;
+    background-color: #fff3e0;
+    font-weight: 600;
+}
+
+.option-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.option-label:has(input:checked) .option-letter {
+    background: #f57c00;
+    color: white;
+}
+
+.option-text {
+    line-height: 1.5;
+    flex: 1;
+}
+
+.short-answer-wrap {
+    width: 100%;
+}
+
+.short-answer-input {
+    width: 100%;
+    padding: 1rem;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.short-answer-input:focus {
+    outline: none;
+    border-color: #f57c00;
+}
+
+.quiz-submit-area {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e8e8e8;
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.05rem;
+}
+
+.error-message {
+    color: #d32f2f;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.error-message.hidden {
+    display: none;
+}
+
+/* ========================================================================
+   QUIZ RESULTS - NotebookLM Style
+   ======================================================================== */
+
+.results-header {
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+    color: white;
+    padding: 2rem;
+}
+
+.results-header h3 {
+    color: white;
+}
+
+.results-header .modal-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.results-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.score-card {
+    text-align: center;
+    border-radius: 14px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+    width: 100%;
+    max-width: 400px;
+}
+
+.score-big {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.score-pct {
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.score-label {
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+}
+
+.circle-wrap {
+    position: relative;
+    width: 140px;
+    margin: 1.5rem 0;
+}
+
+.circle-svg {
+    width: 140px;
+    height: 140px;
+}
+
+.circle-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.review-section {
+    width: 100%;
+    margin-top: 2rem;
+}
+
+.review-section h4 {
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+.review-card {
+    display: flex;
+    gap: 1rem;
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid transparent;
+}
+
+.review-card.correct {
+    border-left-color: #2e7d32;
+}
+
+.review-card.incorrect {
+    border-left-color: #d32f2f;
+}
+
+.review-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.review-content {
+    flex: 1;
+}
+
+.review-q-num {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    margin-bottom: 0.5rem;
+}
+
+.review-q-text {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.review-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.review-option {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    border-radius: 6px;
+    background: #f8f8f8;
+    font-size: 0.95rem;
+}
+
+.review-option.opt-correct {
+    background: #e8f5e9;
+    font-weight: 600;
+}
+
+.review-option.opt-wrong {
+    background: #ffebee;
+}
+
+.opt-ltr {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.opt-tag {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #2e7d32;
+}
+
+.wrong-tag {
+    color: #d32f2f;
+}
+
+.review-answers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.ans-row {
+    display: flex;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    border-radius: 6px;
+}
+
+.your-ans {
+    background: #ffebee;
+}
+
+.correct-ans {
+    background: #e8f5e9;
+}
+
+.ans-label {
+    font-weight: 600;
+    min-width: 110px;
+}
+
+.explanation {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 6px;
+    background: #f5f5f5;
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+}
+
+.results-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    padding-top: 2rem;
+    border-top: 1px solid #e8e8e8;
+    width: 100%;
+}
+
+.results-actions .btn {
+    min-width: 140px;
+}
+
+/* ========================================================================
+   EMPTY STATE & LOADING
+   ======================================================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #999;
+}
+
+.empty-state p {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
+.empty-state .btn-lg {
+    margin-top: 1rem;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(102, 126, 234, 0.3);
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================================================
+   RESPONSIVE DESIGN FOR MODALS
+   ======================================================================== */
+
+@media (max-width: 1200px) {
+    .modal-content-fullscreen {
+        width: 95%;
+        max-width: 800px;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-content-fullscreen {
+        width: 98%;
+        height: 90vh;
+        max-width: 100%;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .flashcard {
+        height: 240px;
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+        padding: 1.5rem;
+    }
+
+    .card-text {
+        font-size: 1rem;
+    }
+
+    .card-nav {
+        gap: 0.5rem;
+    }
+
+    .card-nav .btn {
+        min-width: 80px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .question-card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .score-big {
+        font-size: 2.5rem;
+    }
+
+    .score-pct {
+        font-size: 1.2rem;
+    }
+
+    .review-card {
+        padding: 1rem;
+    }
+
+    .results-actions {
+        flex-direction: column;
+    }
+
+    .results-actions .btn {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .learning-toolbar {
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+

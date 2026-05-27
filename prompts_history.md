@@ -178,3 +178,9 @@
 ### 24-05-2026 13:50
 - **Prompt**: explain the use of chromadb and sql alchemy
 
+### 27-05-2026 18:22
+- **Prompt**: Integrate #file:flashcards.html #file:quiz.html and #file:quiz_results.html seemlessly into the dashboard as modals. Connect them in a way that works with the flow of the app and makes it ressemble notebook lm
+
+### 27-05-2026 18:28
+- **Prompt**: I got an error when I tried to open the app. I attached a screenshot above. Please fix the error and explain why it happened
+
