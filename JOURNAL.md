@@ -1641,3 +1641,8 @@ This session focused on fixing a critical dashboard syntax error and diagnosing 
 - **Hook Version**: 1.02
 - **Date**: 27-05-2026 19:55
 - **Prompt**: Improve my prompt for review code, then add the try, except block like the previous functions, keep the changes minimal, simple enough so that I understand how it's working, then explain the main goals the function is achieving
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 20:03
+- **Prompt**: complete implementing this file if any todo is not implemented yet, keep it minimal so that I can figure the code out, then explain the chnages you made
