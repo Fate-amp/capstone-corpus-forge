@@ -1245,3 +1245,8 @@ The code is production-quality for first-year CS students:
 - **Hook Version**: 1.02
 - **Date**: 27-05-2026 18:56
 - **Prompt**: correct the mismatches based on the chromadb version that I'm using right now and complete init, if there is anything left
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 19:03
+- **Prompt**: Explain to me how _chunk_text work like you're a senior software developer and tell me what was wrong with the last implementation
