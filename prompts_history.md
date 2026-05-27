@@ -281,3 +281,6 @@
 ### 27-05-2026 20:54
 - **Prompt**: I need you to create an md file, explaining what person A,B and C did. For each person, explain in clear steps and simple terms what they did, explain what every library they used does and then prepare questions for the person to check their understanding of their part
 
+### 27-05-2026 21:09
+- **Prompt**: I'm getting a 500 server error for even a minimum summarize prompt on dashboard.html Help me pinpoint the problem
+
