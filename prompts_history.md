@@ -178,3 +178,6 @@
 ### 27-05-2026 19:03
 - **Prompt**: Explain to me how _chunk_text work like you're a senior software developer and tell me what was wrong with the last implementation
 
+### 27-05-2026 19:06
+- **Prompt**: Now improve my code based on the points that you listed and explain the main changes that you did
+
