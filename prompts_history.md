@@ -296,3 +296,6 @@
 ### 27-05-2026 21:19
 - **Prompt**: i get the 500 error specifically when i select the document and ask a simple question in the chat like: summarize
 
+### 27-05-2026 21:25
+- **Prompt**: Now it says: response generated successfully but I'm not seeing any response Go through the whole app and make sure every intended feature works
+
