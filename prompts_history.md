@@ -287,3 +287,6 @@
 ### 27-05-2026 21:11
 - **Prompt**: find where the error comes from
 
+### 27-05-2026 21:17
+- **Prompt**: still 500
+
