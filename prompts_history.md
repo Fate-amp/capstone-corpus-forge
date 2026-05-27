@@ -284,3 +284,6 @@
 ### 27-05-2026 21:09
 - **Prompt**: I'm getting a 500 server error for even a minimum summarize prompt on dashboard.html Help me pinpoint the problem
 
+### 27-05-2026 21:11
+- **Prompt**: find where the error comes from
+
