@@ -249,3 +249,6 @@
 ### 27-05-2026 20:28
 - **Prompt**: docx and pytesseract cannot be resolved
 
+### 27-05-2026 20:29
+- **Prompt**: they're still not working
+
