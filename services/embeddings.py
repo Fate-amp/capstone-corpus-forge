@@ -13,6 +13,7 @@ TODO: Add metadata filtering for more precise retrieval
 TODO: Add re-ranking of retrieved chunks
 """
 
+import os
 import google.generativeai as genai
 import chromadb
 import logging
@@ -40,12 +41,38 @@ class EmbeddingsService:
             
         TODO: Validate chromadb_path exists and is writable
         """
-        self.genai_client = genai.Client(api_key=api_key)
-        
-        # Initialize ChromaDB client (in-process)
-        self.chromadb_client = chromadb.Client()
+        # Resolve API key: prefer explicit param, fallback to env var
+        if not api_key:
+            api_key = os.getenv('GOOGLE_API_KEY')
+        if not api_key:
+            raise ValueError("Google api key is missing")
+
+        # Initialize GenAI client
+        try:
+            self.genai_client = genai.Client(api_key=api_key)
+        except Exception as e:
+            logger.error(f"Failed to initialize Google GenAI client: {e}")
+            raise RuntimeError("Failed to initialize Google GenAI client") from e
+
+        # Initialize ChromaDB persistent client (ensure path exists)
         self.chromadb_path = chromadb_path
-        logger.info(f"ChromaDB initialized at {chromadb_path}")
+        Path(chromadb_path).mkdir(parents=True, exist_ok=True)
+        try:
+            # Prefer PersistentClient if available in this chromadb version
+            if hasattr(chromadb, 'PersistentClient'):
+                self.chromadb_client = chromadb.PersistentClient(path=chromadb_path)
+            else:
+                # Fallback to Client with Settings (some versions expect settings)
+                try:
+                    settings = chromadb.config.Settings(persist_directory=chromadb_path)
+                    self.chromadb_client = chromadb.Client(settings)
+                except Exception:
+                    # Last resort: plain Client()
+                    self.chromadb_client = chromadb.Client()
+            logger.info(f"ChromaDB initialized at {chromadb_path}")
+        except Exception as e:
+            logger.error(f"Failed to initialize ChromaDB client: {e}")
+            raise RuntimeError("Failed to initialize ChromaDB client") from e
     
     def embed_document(self, doc_id: int, document_text: str, metadata: dict = None) -> str:
         """
@@ -81,16 +108,29 @@ class EmbeddingsService:
                 metadata={"doc_id": doc_id}
             )
             
-            # Step 3: Embed and store each chunk
+            # Step 3: Embed and store each chunk (simple retry on failure)
             for chunk_idx, chunk in enumerate(chunks):
+                embedding = None
+                last_exc = None
+                # Try up to 2 times (initial attempt + one retry)
+                for attempt in range(2):
+                    try:
+                        embedding_result = self.genai_client.models.embed_content(
+                            model="models/embedding-001",
+                            contents=chunk,
+                        )
+                        embedding = getattr(embedding_result, 'embedding', None)
+                        break
+                    except Exception as e:
+                        last_exc = e
+                        logger.warning(f"Embedding attempt {attempt+1} failed for chunk {chunk_idx}: {e}")
+
+                if embedding is None:
+                    logger.error(f"Error embedding chunk {chunk_idx}: {last_exc}")
+                    # Continue with next chunk
+                    continue
+
                 try:
-                    # Generate embedding using google.genai client API
-                    embedding_result = self.genai_client.models.embed_content(
-                        model="models/embedding-001",
-                        contents=chunk,
-                    )
-                    embedding = embedding_result.embedding
-                    
                     # Store in ChromaDB
                     collection.add(
                         ids=[f"{collection_name}_chunk_{chunk_idx}"],
@@ -102,10 +142,8 @@ class EmbeddingsService:
                             "chunk_count": len(chunks),
                         }]
                     )
-                
                 except Exception as e:
-                    logger.error(f"Error embedding chunk {chunk_idx}: {str(e)}")
-                    # Continue with next chunk
+                    logger.error(f"Error adding chunk {chunk_idx} to collection: {str(e)}")
                     continue
             
             logger.info(f"Document {doc_id} embedded and stored in ChromaDB")
@@ -133,31 +171,51 @@ class EmbeddingsService:
         TODO: Add sentence-aware chunking to avoid breaking mid-sentence
         TODO: Add configurable chunking strategy
         """
-        # Convert token size to character size (rough approximation)
-        char_size = chunk_size * 4
-        char_overlap = overlap * 4
-        
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be > 0")
+
+        if overlap < 0:
+            raise ValueError("overlap cannot be negative")
+
+        if overlap >= chunk_size:
+            raise ValueError("overlap must be smaller than chunk_size")
+
+        target_size = chunk_size * 4
+        overlap_size = overlap * 4
+
+        text = " ".join(text.split())
+
+        if not text:
+            return []
+
         chunks = []
-        current_pos = 0
-        
-        while current_pos < len(text):
-            # Extract chunk
-            chunk = text[current_pos:current_pos + char_size]
-            
-            # Try to end at a sentence boundary (if near the end)
-            if current_pos + char_size < len(text):
-                last_period = chunk.rfind('.')
-                if last_period > len(chunk) * 0.8:  # If period is close to end
-                    chunk = chunk[:last_period + 1]
-            
-            if chunk.strip():  # Only add non-empty chunks
+        start = 0
+        text_length = len(text)
+
+        while start < text_length:
+            end = min(start + target_size, text_length)
+
+            if end < text_length:
+                boundary_window = text[start:end]
+
+                split_idx = max(
+                    boundary_window.rfind("\n\n"),
+                    boundary_window.rfind(". "),
+                    boundary_window.rfind("! "),
+                    boundary_window.rfind("? "),
+                    boundary_window.rfind(" ")
+                )
+
+                if split_idx > int(target_size * 0.6):
+                    end = start + split_idx + 1
+
+            chunk = text[start:end].strip()
+
+            if chunk:
                 chunks.append(chunk)
-            
-            # Move position for next chunk (with overlap)
-            # Ensure we always advance by at least 1 character to avoid infinite loop
-            advance = max(1, len(chunk) - char_overlap)
-            current_pos += advance
-        
+
+            start = max(start + 1, end - overlap_size)
+
         return chunks
     
     def retrieve_context(
