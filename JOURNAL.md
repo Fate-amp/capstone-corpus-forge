@@ -1626,3 +1626,8 @@ This session focused on fixing a critical dashboard syntax error and diagnosing 
 - **Date**: 27-05-2026 19:10
 - **Prompt**: no i want minimum changes and something that works well.do not overdo it. keep it short and simple for now so that I can understand how everything is working.
 >>>>>>> c4cd220d62501f09f388ebe71dd3b85b0b936d8e
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 19:37
+- **Prompt**: Please run a debug and make the ai work properly in the chat. replace all instances of google.generativeai with google.genai and do it properly so to avoid any error
