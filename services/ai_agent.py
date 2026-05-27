@@ -14,6 +14,8 @@ TODO: Add structured output parsing
 
 import google.generativeai as genai
 import logging
+import json
+import re
 from typing import Dict
 
 logger = logging.getLogger(__name__)
@@ -231,7 +233,61 @@ Please answer the question using ONLY the context provided above. If the answer 
         Yields:
             str: JSON-formatted QA pairs
         """
-        pass
+        prompt = f"""
+        You are an expert tutor. Create exactly {num_cards} flashcards using ONLY the document context below.
+        Audience level: {audience_level}.
+
+        Requirements:
+        - Return a JSON array only, no extra text or markdown fences.
+        - Each array item must be an object with keys: "question" and "answer".
+        - Keep each answer concise (1-3 short sentences).
+
+        DOCUMENT:
+        {context}
+        """
+
+        try:
+            ai_resp = self.generate_response(
+                prompt,
+                context,
+                temperature=0.5,
+                top_p=0.9,
+                max_tokens=2000,
+                audience_level=audience_level,
+            )
+
+            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            raw = raw.strip()
+
+            # Remove accidental markdown fences the model may include
+            raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+            raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
+
+            cards = json.loads(raw)
+            if not isinstance(cards, list):
+                raise ValueError("Expected a JSON array of flashcards")
+
+            validated = []
+            for item in cards:
+                if not isinstance(item, dict):
+                    continue
+                q = item.get('question') or item.get('q')
+                a = item.get('answer') or item.get('a')
+                if not q or not a:
+                    continue
+                validated.append({
+                    'question': str(q).strip(),
+                    'answer': str(a).strip()
+                })
+
+            if not validated:
+                raise ValueError("No valid flashcards found in model output")
+
+            return validated
+
+        except Exception as e:
+            logger.error(f"Error generating flashcards: {str(e)}")
+            return [{"question": "Could not generate flashcards.", "answer": str(e)}]
     
     def generate_quiz(
         self,
@@ -252,8 +308,85 @@ Please answer the question using ONLY the context provided above. If the answer 
         Yields:
             str: JSON-formatted quiz questions with MC options
         """
-        pass
-    
+        prompt = f"""
+        You are an expert instructor. Create exactly {num_questions} quiz questions using ONLY the document context below.
+        Audience level: {audience_level}.
+
+        Output requirements:
+        - Return ONLY a JSON array (no explanation, no markdown fences).
+        - Each item must be an object with:
+          - "question": string
+          - "answers": array of strings (2-5 options)
+          - optional: "correct_index": integer (index into answers)
+        - Keep questions and each answer <= 2 short sentences.
+
+        DOCUMENT:
+        {context}
+        """
+
+        try:
+            ai_resp = self.generate_response(
+                prompt,
+                context,
+                temperature=0.5,
+                top_p=0.9,
+                max_tokens=2000,
+                audience_level=audience_level,
+            )
+
+            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            raw = raw.strip()
+
+            # Remove accidental markdown fences
+            raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+            raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
+
+            questions = json.loads(raw)
+            if not isinstance(questions, list):
+                raise ValueError("Expected a JSON array of quiz questions")
+
+            validated = []
+            for idx, item in enumerate(questions):
+                if not isinstance(item, dict):
+                    continue
+
+                q = item.get('question') or item.get('q')
+                opts = item.get('answers') or item.get('options') or item.get('choices')
+                corr = item.get('correct_index')
+
+                if not q or not isinstance(opts, list) or len(opts) < 2:
+                    continue
+
+                # normalize options to strings
+                opts_norm = [str(x).strip() for x in opts if x and str(x).strip()]
+                if len(opts_norm) < 2:
+                    continue
+
+                # normalize correct index if present and valid
+                correct_index = None
+                try:
+                    if corr is not None:
+                        ci = int(corr)
+                        if 0 <= ci < len(opts_norm):
+                            correct_index = ci
+                except Exception:
+                    correct_index = None
+
+                validated.append({
+                    'question': str(q).strip(),
+                    'answers': opts_norm,
+                    'correct_index': correct_index
+                })
+
+            if not validated:
+                raise ValueError("No valid quiz questions found in model output")
+
+            return validated
+
+        except Exception as e:
+            logger.error(f"Error generating quiz: {str(e)}")
+            return [{"question": "Could not generate the quiz.", "answers": [str(e)], "correct_index": None}]
+        
     def review_code(self, code_text: str, audience_level: str = "intermediate") -> str:
         """
         Generate code review report for uploaded code.
