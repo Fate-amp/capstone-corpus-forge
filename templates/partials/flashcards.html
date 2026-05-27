@@ -4,250 +4,344 @@
 
 {% block content %}
 <div class="flashcard-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+    <h2>Flashcards: {{ document.title }}</h2>
+    <span class="badge">{{ flashcards|length }} cards</span>
+  </div>
 
-    <div class="page-header">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
-        <h2>Flashcards: {{ document.title }}</h2>
-        <span class="badge">{{ flashcards|length }} cards</span>
+  {% if not flashcards %}
+  <!-- Empty State: No Flashcards -->
+  <div class="empty-state" data-document-id="{{ document.id }}">
+    <p>No flashcards found for this document.</p>
+    <button id="generate-btn" class="btn btn-primary" onclick="generateFlashcards()">
+      Generate Flashcards
+    </button>
+    <div id="generate-status" style="margin-top: 10px;"></div>
+  </div>
+
+  <script>
+    function generateFlashcards() {
+      const btn = document.getElementById('generate-btn');
+      const status = document.getElementById('generate-status');
+      const docId = document.querySelector('.empty-state').dataset.documentId;
+      btn.disabled = true;
+      btn.textContent = 'Generating…';
+      status.textContent = '';
+
+      fetch('/generate-flashcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: docId, num_cards: 8 })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          status.textContent = 'Error: ' + (data.error || 'Unknown error');
+          btn.disabled = false;
+          btn.textContent = 'Generate Flashcards';
+        }
+      })
+      .catch(err => {
+        status.textContent = 'Network error: ' + err;
+        btn.disabled = false;
+        btn.textContent = 'Generate Flashcards';
+      });
+    }
+  </script>
+
+  {% else %}
+  <!-- Flashcard Study Interface -->
+  <div class="flashcard-study">
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
+    </div>
+    <div class="progress-label">
+      Card <span id="current-idx">1</span> of {{ flashcards|length }}
     </div>
 
-    {% if not flashcards %}
-    <!-- No flashcards yet — offer to generate -->
-    <div class="empty-state">
-        <p>No flashcards found for this document.</p>
-        <button id="generate-btn" class="btn btn-primary" onclick="generateFlashcards()">
-            Generate Flashcards
-        </button>
-        <div id="generate-status" style="margin-top:10px;"></div>
+    <!-- Flashcard Display -->
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="flashcard-inner" id="flashcard-inner">
+        <!-- Front: Question -->
+        <div class="flashcard-front">
+          <div class="card-label">Question</div>
+          <div class="card-text" id="question-text">{{ flashcards[0].question }}</div>
+          <div class="flip-hint">Click to reveal answer</div>
+        </div>
+
+        <!-- Back: Answer -->
+        <div class="flashcard-back">
+          <div class="card-label">Answer</div>
+          <div class="card-text" id="answer-text">{{ flashcards[0].answer }}</div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        function generateFlashcards() {
-            const btn = document.getElementById('generate-btn');
-            const status = document.getElementById('generate-status');
-            btn.disabled = true;
-            btn.textContent = 'Generating…';
-            status.textContent = '';
-
-            fetch('/generate-flashcards', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ document_id: {{ document.id }}, num_cards: 8 })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    status.textContent = 'Error: ' + (data.error || 'Unknown error');
-                    btn.disabled = false;
-                    btn.textContent = 'Generate Flashcards';
-                }
-            })
-            .catch(err => {
-                status.textContent = 'Network error: ' + err;
-                btn.disabled = false;
-                btn.textContent = 'Generate Flashcards';
-            });
-        }
-    </script>
-
-    {% else %}
-    <!-- Flashcard study interface -->
-    <div class="flashcard-study">
-
-        <!-- Progress bar -->
-        <div class="progress-bar-wrap">
-            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
-        </div>
-        <div class="progress-label">
-            Card <span id="current-idx">1</span> of {{ flashcards|length }}
-        </div>
-
-        <!-- The flashcard itself -->
-        <div class="flashcard" id="flashcard" onclick="flipCard()">
-            <div class="flashcard-inner" id="flashcard-inner">
-
-                <div class="flashcard-front">
-                    <div class="card-label">Question</div>
-                    <div class="card-text" id="question-text">
-                        {{ flashcards[0].question }}
-                    </div>
-                    <div class="flip-hint">Click to reveal answer</div>
-                </div>
-
-                <div class="flashcard-back">
-                    <div class="card-label">Answer</div>
-                    <div class="card-text" id="answer-text">
-                        {{ flashcards[0].answer }}
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Navigation buttons -->
-        <div class="card-nav">
-            <button class="btn btn-secondary" id="prev-btn" onclick="prevCard()" disabled>
-                ← Previous
-            </button>
-
-            <button class="btn btn-outline" id="flip-btn" onclick="flipCard()">
-                Flip Card
-            </button>
-
-            <button class="btn btn-primary" id="next-btn" onclick="nextCard()">
-                Next →
-            </button>
-        </div>
-
-        <!-- Regenerate button -->
-        <div style="text-align:center; margin-top:20px;">
-            <button class="btn btn-secondary" onclick="regenerate()">
-                🔄 Regenerate Flashcards
-            </button>
-        </div>
+    <!-- Navigation Controls -->
+    <div class="card-nav">
+      <button class="btn btn-secondary" id="prev-btn" onclick="prevCard()" disabled>
+        ← Previous
+      </button>
+      <button class="btn btn-outline" id="flip-btn" onclick="flipCard()">
+        Flip Card
+      </button>
+      <button class="btn btn-primary" id="next-btn" onclick="nextCard()">
+        Next →
+      </button>
     </div>
 
-    <!-- Embed all flashcard data into JS -->
-    <script>
-        const flashcards = [
-            {% for card in flashcards %}
-            { id: {{ card.id }}, question: {{ card.question | tojson }}, answer: {{ card.answer | tojson }} }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ];
+    <!-- Regenerate Button -->
+    <div class="regenerate-wrap" data-document-id="{{ document.id }}">
+      <button class="btn btn-secondary" onclick="regenerate()">
+        🔄 Regenerate Flashcards
+      </button>
+    </div>
+  </div>
 
-        let currentIndex = 0;
-        let isFlipped = false;
+  <!-- Flashcard Data & Logic -->
+  <script>
+    const flashcardsData = `[
+      {% for card in flashcards %}
+      { "id": {{ card.id }}, "question": {{ card.question | tojson }}, "answer": {{ card.answer | tojson }} }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]`;
+    const flashcards = JSON.parse(flashcardsData);
 
-        function updateCard() {
-            const card = flashcards[currentIndex];
-            document.getElementById('question-text').textContent = card.question;
-            document.getElementById('answer-text').textContent = card.answer;
-            document.getElementById('current-idx').textContent = currentIndex + 1;
+    let currentIndex = 0;
+    let isFlipped = false;
 
-            // Reset flip state
-            isFlipped = false;
-            document.getElementById('flashcard-inner').classList.remove('flipped');
+    function updateCard() {
+      const card = flashcards[currentIndex];
+      document.getElementById('question-text').textContent = card.question;
+      document.getElementById('answer-text').textContent = card.answer;
+      document.getElementById('current-idx').textContent = currentIndex + 1;
 
-            // Update nav buttons
-            document.getElementById('prev-btn').disabled = currentIndex === 0;
-            document.getElementById('next-btn').disabled = currentIndex === flashcards.length - 1;
-            document.getElementById('next-btn').textContent =
-                currentIndex === flashcards.length - 1 ? '✓ Done' : 'Next →';
+      // Reset flip state
+      isFlipped = false;
+      document.getElementById('flashcard-inner').classList.remove('flipped');
 
-            // Update progress bar
-            const pct = ((currentIndex + 1) / flashcards.length) * 100;
-            document.getElementById('progress-bar').style.width = pct + '%';
-        }
+      // Update navigation buttons
+      document.getElementById('prev-btn').disabled = currentIndex === 0;
+      document.getElementById('next-btn').disabled = currentIndex === flashcards.length - 1;
+      document.getElementById('next-btn').textContent =
+        currentIndex === flashcards.length - 1 ? '✓ Done' : 'Next →';
 
-        function flipCard() {
-            isFlipped = !isFlipped;
-            const inner = document.getElementById('flashcard-inner');
-            if (isFlipped) {
-                inner.classList.add('flipped');
-            } else {
-                inner.classList.remove('flipped');
-            }
-        }
+      // Update progress bar
+      const pct = ((currentIndex + 1) / flashcards.length) * 100;
+      document.getElementById('progress-bar').style.width = pct + '%';
+    }
 
-        function nextCard() {
-            if (currentIndex < flashcards.length - 1) {
-                currentIndex++;
-                updateCard();
-            }
-        }
+    function flipCard() {
+      isFlipped = !isFlipped;
+      const inner = document.getElementById('flashcard-inner');
+      inner.classList.toggle('flipped');
+    }
 
-        function prevCard() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateCard();
-            }
-        }
-
-        function regenerate() {
-            if (!confirm('Delete all current flashcards and generate new ones?')) return;
-            fetch('/generate-flashcards', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ document_id: {{ document.id }}, num_cards: 8 })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) window.location.reload();
-                else alert('Error: ' + (data.error || 'Unknown error'));
-            });
-        }
-
-        // Keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowRight' || e.key === 'n') nextCard();
-            if (e.key === 'ArrowLeft'  || e.key === 'p') prevCard();
-            if (e.key === ' ' || e.key === 'f') { e.preventDefault(); flipCard(); }
-        });
-
-        // Initialize first card
+    function nextCard() {
+      if (currentIndex < flashcards.length - 1) {
+        currentIndex++;
         updateCard();
-    </script>
+      }
+    }
 
-    <style>
-        .flashcard-study { max-width: 680px; margin: 0 auto; }
+    function prevCard() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateCard();
+      }
+    }
 
-        .progress-bar-wrap {
-            background: #e0e0e0;
-            border-radius: 4px;
-            height: 8px;
-            margin-bottom: 6px;
-        }
-        .progress-bar {
-            background: var(--color-primary, #4a6fa5);
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        .progress-label { text-align: center; font-size: 0.85rem; color: #666; margin-bottom: 20px; }
+    function regenerate() {
+      if (!confirm('Delete all current flashcards and generate new ones?')) return;
+      const docId = document.querySelector('.regenerate-wrap').dataset.documentId;
+      fetch('/generate-flashcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ document_id: docId, num_cards: 8 })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) window.location.reload();
+        else alert('Error: ' + (data.error || 'Unknown error'));
+      });
+    }
 
-        .flashcard {
-            perspective: 1000px;
-            cursor: pointer;
-            height: 280px;
-            margin-bottom: 24px;
-        }
-        .flashcard-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            transform-style: preserve-3d;
-            transition: transform 0.5s ease;
-        }
-        .flashcard-inner.flipped { transform: rotateY(180deg); }
+    // Keyboard Navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === 'n') nextCard();
+      if (e.key === 'ArrowLeft' || e.key === 'p') prevCard();
+      if (e.key === ' ' || e.key === 'f') {
+        e.preventDefault();
+        flipCard();
+      }
+    });
 
-        .flashcard-front, .flashcard-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            border-radius: 12px;
-            padding: 32px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-        .flashcard-front { background: #fff; border: 2px solid var(--color-primary, #4a6fa5); }
-        .flashcard-back  { background: var(--color-primary, #4a6fa5); color: #fff; transform: rotateY(180deg); }
+    // Initialize first card
+    updateCard();
+  </script>
 
-        .card-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-                      letter-spacing: 1px; margin-bottom: 12px; opacity: 0.7; }
-        .card-text  { font-size: 1.15rem; line-height: 1.6; }
-        .flip-hint  { font-size: 0.75rem; opacity: 0.45; margin-top: 16px; }
+  <style>
+    .flashcard-page {
+      padding: 20px;
+    }
 
-        .card-nav { display: flex; justify-content: center; gap: 12px; }
-        .badge { background: #eee; border-radius: 12px; padding: 2px 10px; font-size: 0.8rem; }
-    </style>
-    {% endif %}
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
 
+    .page-header h2 {
+      margin: 0;
+      flex: 1;
+      text-align: center;
+    }
+
+    .page-header .btn {
+      margin-right: auto;
+    }
+
+    .page-header .badge {
+      margin-left: auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .flashcard-study {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .progress-bar-wrap {
+      background: #e0e0e0;
+      border-radius: 4px;
+      height: 8px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      background: var(--color-primary, #4a6fa5);
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .flashcard {
+      perspective: 1000px;
+      cursor: pointer;
+      height: 280px;
+      margin-bottom: 24px;
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+    }
+
+    .flashcard-inner.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-front,
+    .flashcard-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .flashcard-front {
+      background: #fff;
+      border: 2px solid var(--color-primary, #4a6fa5);
+    }
+
+    .flashcard-back {
+      background: var(--color-primary, #4a6fa5);
+      color: #fff;
+      transform: rotateY(180deg);
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+
+    .card-text {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    .flip-hint {
+      font-size: 0.75rem;
+      opacity: 0.45;
+      margin-top: 16px;
+    }
+
+    .card-nav {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .card-nav button {
+      min-width: 120px;
+    }
+
+    .regenerate-wrap {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .badge {
+      background: #eee;
+      border-radius: 12px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      color: #333;
+    }
+  </style>
+  {% endif %}
 </div>
 {% endblock %}
