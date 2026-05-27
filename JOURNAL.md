@@ -1646,3 +1646,8 @@ This session focused on fixing a critical dashboard syntax error and diagnosing 
 - **Hook Version**: 1.02
 - **Date**: 27-05-2026 20:03
 - **Prompt**: complete implementing this file if any todo is not implemented yet, keep it minimal so that I can figure the code out, then explain the chnages you made
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 20:13
+- **Prompt**: is #sym:analyze_control_flow  being used anywhere on the backend and the frontend? I need to delete that feature or merge it with analyze architecture also, help me craft a good prompt for analyze_architecture. what main points should I include?
