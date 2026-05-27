@@ -261,3 +261,6 @@
 ### 27-05-2026 20:37
 - **Prompt**: Go through the whole application. Is the ai agent correctly working, receiving files, sending responses If something is not working well, don't make any changes. List them first and explain each in max 3 sentences
 
+### 27-05-2026 20:54
+- **Prompt**: I need you to create an md file, explaining what person A,B and C did. For each person, explain in clear steps and simple terms what they did, explain what every library they used does and then prepare questions for the person to check their understanding of their part
+
