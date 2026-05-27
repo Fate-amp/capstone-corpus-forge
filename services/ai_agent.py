@@ -381,7 +381,52 @@ Please answer the question using ONLY the context provided above. If the answer 
         Returns:
             str: Code review report
         """
-        pass
+        prompt = f"""
+You are a senior software developer. Review the provided code and produce a concise, actionable review.
+Audience level: {audience_level}.
+
+Tasks:
+- List bugs with file/line references and impact, sorted by severity.
+- List missing edge cases and inputs not handled.
+- Suggest improvements for performance, readability, and best practices with minimal code fixes.
+
+Output requirements:
+- Return ONLY valid JSON (no explanations, no markdown fences).
+- JSON object schema: {"issues": [{{"id","severity","lines","title","description","fix"}}], "summary": "short text"}.
+
+Base findings ONLY on the provided code.
+
+CODE:
+{code_text}
+"""
+
+        try:
+            ai_resp = self.generate_response(
+                prompt,
+                code_text,
+                temperature=0.2,
+                top_p=0.3,
+                max_tokens=2000,
+                audience_level=audience_level,
+            )
+
+            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            raw = raw.strip()
+
+            # Remove accidental markdown fences
+            raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+            raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
+
+            try:
+                parsed = json.loads(raw)
+                return parsed
+            except Exception:
+                # If model didn't return JSON, return raw text under a key
+                return {"report": raw}
+
+        except Exception as e:
+            logger.error(f"Error generating code review: {str(e)}")
+            return {"error": str(e), "report": ""}
     
     def analyze_architecture(self, code_text: str) -> str:
         """
