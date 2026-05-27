@@ -14,19 +14,21 @@
 */
 
 /* ========================================================================
-   COLOR PALETTE (NotebookLM Inspired)
+   COLOR PALETTE (Soft Pastel Purple / Pink / Blue Theme)
    ======================================================================== */
 :root {
-    --color-emerald: #284139;
-    --color-wasabi: #80907F;
-    --color-cream: #F8E794;
-    --color-earth: #8B6830;
-    --color-noir: #111A19;
-    --color-white: #FAFBF9;
-    --color-light-gray: #F3F4F1;
-    --color-border: #E8E9E6;
-    --color-text: #2B2D28;
-    --color-text-secondary: #6B6E66;
+    --color-emerald: #6C63B8;          /* soft indigo purple */
+    --color-wasabi: #9B8EDB;           /* lavender */
+    --color-cream: #F7D6E8;            /* blush pink */
+    --color-earth: #7A8FD1;            /* muted periwinkle blue */
+    --color-noir: #2D2A4A;             /* deep navy-purple */
+    
+    --color-white: #FCFBFF;            /* soft white */
+    --color-light-gray: #F5F3FA;       /* lavender mist */
+    --color-border: #E5E0F0;           /* pale lilac border */
+    
+    --color-text: #2F2A44;             /* dark muted purple */
+    --color-text-secondary: #7D7696;   /* soft gray-purple */
 }
 
 /* Reset & Base Styles */
