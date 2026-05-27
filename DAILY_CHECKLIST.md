@@ -37,12 +37,12 @@
 - [X] Implement upload modal in `dashboard.html` (show/hide)
 - [X] Implement file input form with proper file type validation feedback
 - [X] Style upload button and modal (CSS in `static/css/main.css`)
-- [ ] Make document items clickable (add visual selection state)
-- [ ] Implement delete button with confirmation dialog
-- [ ] Add event listeners for:
-  - [ ] Upload button → show modal
-  - [ ] Document click → select document
-  - [ ] Delete button → confirm delete + send to backend
+- [X] Make document items clickable (add visual selection state)
+- [X] Implement delete button with confirmation dialog
+- [X] Add event listeners for:
+  - [X] Upload button → show modal
+  - [X] Document click → select document
+  - [X] Delete button → confirm delete + send to backend
 - [ ] **Side Task (AI/Embeddings)**: Understand how extracted text will be chunked and embedded on Day 3. Review `document_processor.py` to see what text extraction returns.
 
 **Person B (AI/Embeddings Main)**

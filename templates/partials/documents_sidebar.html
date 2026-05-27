@@ -99,22 +99,16 @@
         sessionStorage.setItem('selectedDocId', docId);
         sessionStorage.setItem('selectedDocTitle', docTitle);
         
+        // Update dashboard manager with selected document
+        if (window.dashboardManager) {
+            window.dashboardManager.setSelectedDocument(docId, docTitle);
+        }
+        
+        // Dispatch custom event so chat box can update its state
+        document.dispatchEvent(new CustomEvent('documentSelected', { detail: { docId, docTitle } }));
+        
         console.log(`Selected document: ${docId} - ${docTitle}`);
     }
-
-    // Add click event listeners to all document items
-    document.querySelectorAll('.document-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            // Don't select if clicking on the delete button
-            if (e.target.closest('.delete-doc-btn')) {
-                return;
-            }
-            
-            const docId = this.dataset.docId;
-            const docTitle = this.dataset.docTitle;
-            selectDocument(this, docId, docTitle);
-        });
-    });
 
     // ========================================================================
     // Document Deletion
@@ -200,19 +194,35 @@
         }
     }
 
-    // Delete button click handlers
-    document.querySelectorAll('.delete-doc-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            // Prevent event bubbling to document item click handler
-            e.stopPropagation();
+    // ========================================================================
+    // EVENT DELEGATION: Document Selection & Deletion
+    // ========================================================================
+    // Using event delegation on the container so it works for dynamically
+    // added documents after upload without requiring page reload
+    
+    const documentListItems = document.querySelector('.documents-list-items');
+    
+    if (documentListItems) {
+        documentListItems.addEventListener('click', function(e) {
+            // Handle delete button clicks
+            const deleteBtn = e.target.closest('.delete-doc-btn');
+            if (deleteBtn) {
+                e.stopPropagation();
+                const docId = deleteBtn.dataset.docId;
+                const docName = deleteBtn.closest('.document-item').dataset.docTitle;
+                showDeleteConfirmation(docId, docName);
+                return;
+            }
             
-            const docId = this.dataset.docId;
-            const docName = this.closest('.document-item').dataset.docTitle;
-            
-            // Show confirmation dialog
-            showDeleteConfirmation(docId, docName);
+            // Handle document item selection clicks
+            const docItem = e.target.closest('.document-item');
+            if (docItem) {
+                const docId = docItem.dataset.docId;
+                const docTitle = docItem.dataset.docTitle;
+                selectDocument(docItem, docId, docTitle);
+            }
         });
-    });
+    }
 
     // Confirmation dialog buttons
     deleteConfirmBtn.addEventListener('click', () => {

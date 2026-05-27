@@ -302,117 +302,102 @@ def register_routes(app):
             { "response": "...", "tokens_used": 123 }
         """
         try:
-            # Get query and document_id from request
-            data = request.get_json()
-            query = data.get('query', '').strip()
-            document_id = data.get('document_id', None)
-            
+            # Step 1: Parse request — support both JSON body and form data
+            if request.is_json:
+                data = request.get_json()
+                query = data.get('query', '').strip()
+                document_id = data.get('document_id')
+            else:
+                query = request.form.get('query', '').strip()
+                document_id = request.form.get('document_id')
+
+            # Validate inputs
             if not query:
-                logger.warning("Chat request with empty query")
-                return jsonify({'error': 'Query cannot be empty'}), 400
-            
+                return jsonify({'error': 'Query is required'}), 400
             if not document_id:
-                logger.warning("Chat request with no document_id")
-                return jsonify({'error': 'Document must be selected'}), 400
-            
-            # Verify document exists
-            doc = Document.query.get(document_id)
-            if not doc:
-                logger.warning(f"Chat request for non-existent document {document_id}")
-                return jsonify({'error': 'Document not found'}), 404
-            
-            # Get Settings for temperature, top_p, audience, tone
-            settings = Settings.query.first() or Settings()
-            
-            # Retrieve context from ChromaDB
-            try:
-                context = app.embeddings_service.retrieve_context(
-                    query=query,
-                    doc_id=document_id,
-                    top_k=3
-                )
-                if not context.strip():
-                    logger.warning(f"No context retrieved for document {document_id}")
-                    context = "No relevant context found. Please try rephrasing your question."
-            except Exception as e:
-                logger.error(f"Error retrieving context: {str(e)}")
-                context = "Error retrieving document context. Please try again."
-            
-            # Call AIAgent.generate_response() to get generator
-            try:
-                response_generator = app.ai_agent.generate_response(
-                    query=query,
-                    context=context,
-                    temperature=settings.temperature,
-                    top_p=settings.top_p,
-                    max_tokens=settings.max_tokens_per_response,
-                    audience_level=settings.audience_level,
-                    tone=settings.tone
-                )
-            except Exception as e:
-                logger.error(f"Error initializing response generator: {str(e)}")
-                return jsonify({'error': f'Failed to generate response: {str(e)}'}), 500
-            
-            # Create streaming response
-            def generate_stream():
-                full_response = ""
-                
+                return jsonify({'error': 'document_id is required'}), 400
+
+            document_id = int(document_id)
+
+            # Step 2: Load settings from database
+            settings = Settings.query.first()
+            if settings is None:
+                # Fall back to defaults if no settings row exists yet
+                settings = Settings()
+
+            temperature = settings.temperature or 0.7
+            top_p = settings.top_p or 0.9
+            audience_level = settings.audience_level or 'intermediate'
+            tone = settings.tone or 'friendly'
+            max_tokens = settings.max_tokens_per_response or 1000
+
+            # Step 3: Retrieve relevant context chunks from ChromaDB
+            context = ""
+            if app.embeddings_service:
                 try:
-                    # Collect all chunks from the generator
-                    for chunk in response_generator:
-                        full_response += chunk
-                        # Send chunk to client in Server-Sent Events format
-                        # Format: "data: <message>\n\n"
-                        yield f"data: {chunk}\n\n"
-                    
-                except GeneratorExit:
-                    # Handle client disconnect
-                    logger.info("Client disconnected from chat stream")
+                    context = app.embeddings_service.retrieve_context(
+                        query=query,
+                        doc_id=document_id,
+                        top_k=3
+                    )
+                    logger.info(f"Retrieved context: {len(context)} characters for doc {document_id}")
                 except Exception as e:
-                    logger.error(f"Error during streaming: {str(e)}")
-                    yield f"data: [ERROR] {str(e)}\n\n"
-                finally:
-                    # After streaming completes, save to database
-                    if full_response:
-                        try:
-                            # Estimate token counts based on response length
-                            tokens_input = len(query.split()) * 2  # Rough estimate: ~2 tokens per word
-                            tokens_output = len(full_response.split()) * 2
-                            
-                            # Create ChatMessage entry
-                            chat_msg = ChatMessage(
-                                document_id=document_id,
-                                query=query,
-                                response=full_response,
-                                tokens_input=tokens_input,
-                                tokens_output=tokens_output,
-                                tokens_used=tokens_input + tokens_output,
-                                temperature=settings.temperature,
-                                top_p=settings.top_p
-                            )
-                            db.session.add(chat_msg)
-                            
-                            # Log usage with UsageTracker
-                            UsageTracker.log_usage(
-                                model_name=app.config.get('DEFAULT_MODEL', 'gemini-pro'),
-                                tokens_input=tokens_input,
-                                tokens_output=tokens_output,
-                                request_type='chat'
-                            )
-                            
-                            # Commit to database
-                            db.session.commit()
-                            logger.info(f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}")
-                        except Exception as e:
-                            logger.error(f"Error saving chat message: {str(e)}")
-                            db.session.rollback()
-            
-            return generate_stream(), 200, {
-                'Content-Type': 'text/event-stream',
-                'Cache-Control': 'no-cache',
-                'X-Accel-Buffering': 'no'
-            }
-        
+                    logger.warning(f"Could not retrieve context for doc {document_id}: {str(e)}")
+                    # Fall back to empty context — AI will note it has no context
+            else:
+                logger.warning("Embeddings service unavailable; proceeding without context")
+
+            # Step 4: Generate AI response
+            if app.ai_agent is None:
+                return jsonify({'error': 'AI service is not available. Check your GOOGLE_API_KEY.'}), 503
+
+            result = app.ai_agent.generate_response(
+                query=query,
+                context=context,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                audience_level=audience_level,
+                tone=tone
+            )
+
+            response_text = result.get('text', '')
+            tokens_input = result.get('tokens_input', 0)
+            tokens_output = result.get('tokens_output', 0)
+            tokens_total = result.get('tokens_total', 0)
+
+            # Step 5: Save ChatMessage to database
+            chat_message = ChatMessage(
+                document_id=document_id,
+                query=query,
+                response=response_text,
+                tokens_used=tokens_total,
+                tokens_input=tokens_input,
+                tokens_output=tokens_output,
+                temperature=temperature,
+                top_p=top_p
+            )
+            db.session.add(chat_message)
+            db.session.commit()
+            logger.info(f"Saved ChatMessage {chat_message.id} for doc {document_id}")
+
+            # Step 6: Log usage with UsageTracker
+            UsageTracker.log_usage(
+                model_name=settings.model_choice or 'gemini-2.5-flash',
+                tokens_input=tokens_input,
+                tokens_output=tokens_output,
+                request_type='chat'
+            )
+
+            # Step 7: Return JSON response
+            return jsonify({
+                'response': response_text,
+                'tokens_used': tokens_total,
+                'tokens_input': tokens_input,
+                'tokens_output': tokens_output,
+                'message_id': chat_message.id
+            }), 200
+
         except Exception as e:
             logger.error(f"Error in chat: {str(e)}")
             return jsonify({'error': str(e)}), 500
@@ -435,87 +420,113 @@ def register_routes(app):
             max_tokens_per_response : int 100–4000
         """
         try:
-            # Get or create Settings entry (id=1)
+            # Parse request — support form data (from settings_panel.html)
+            if request.is_json:
+                data = request.get_json()
+            else:
+                data = request.form
+
+            # Step 1: Get or create the single Settings row (id=1)
             settings = Settings.query.first()
-            if not settings:
-                settings = Settings(id=1)
+            if settings is None:
+                settings = Settings()
                 db.session.add(settings)
-            
-            # Extract form data from request (JSON or form data)
-            data = request.get_json() if request.is_json else request.form
-            
-            # Update temperature field and validate range (0-2)
+
+            # Step 2: Extract and validate temperature (0.0 – 2.0)
             if 'temperature' in data:
-                temp = float(data['temperature'])
-                if 0.0 <= temp <= 2.0:
-                    settings.temperature = temp
-                else:
-                    logger.warning(f"Invalid temperature value: {temp}")
-                    return jsonify({'error': 'Temperature must be between 0.0 and 2.0'}), 400
-            
-            # Update top_p field and validate range (0-1)
+                try:
+                    temperature = float(data['temperature'])
+                    temperature = max(0.0, min(2.0, temperature))   # clamp
+                    settings.temperature = temperature
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid temperature value: {data['temperature']}")
+
+            # Step 3: Extract and validate top_p (0.0 – 1.0)
             if 'top_p' in data:
-                top_p = float(data['top_p'])
-                if 0.0 <= top_p <= 1.0:
+                try:
+                    top_p = float(data['top_p'])
+                    top_p = max(0.0, min(1.0, top_p))              # clamp
                     settings.top_p = top_p
-                else:
-                    logger.warning(f"Invalid top_p value: {top_p}")
-                    return jsonify({'error': 'Top-p must be between 0.0 and 1.0'}), 400
-            
-            # Update audience_level
-            if 'audience_level' in data:
-                audience = data['audience_level'].lower()
-                if audience in ['beginner', 'intermediate', 'expert']:
-                    settings.audience_level = audience
-                else:
-                    logger.warning(f"Invalid audience_level value: {audience}")
-            
-            # Update tone
-            if 'tone' in data:
-                tone = data['tone'].lower()
-                if tone in ['formal', 'casual', 'technical', 'friendly']:
-                    settings.tone = tone
-                else:
-                    logger.warning(f"Invalid tone value: {tone}")
-            
-            # Update model_choice
-            if 'model_choice' in data:
-                settings.model_choice = data['model_choice']
-            
-            # Update max_tokens_per_response
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid top_p value: {data['top_p']}")
+
+            # Step 4: Audience level
+            valid_audience = {'beginner', 'intermediate', 'expert'}
+            if 'audience_level' in data and data['audience_level'] in valid_audience:
+                settings.audience_level = data['audience_level']
+
+            # Step 5: Tone
+            valid_tones = {'formal', 'casual', 'technical', 'friendly'}
+            if 'tone' in data and data['tone'] in valid_tones:
+                settings.tone = data['tone']
+
+            # Step 6: Max tokens (100 – 4000)
             if 'max_tokens_per_response' in data:
                 try:
                     max_tokens = int(data['max_tokens_per_response'])
-                    if max_tokens > 0:
-                        settings.max_tokens_per_response = max_tokens
-                except ValueError:
-                    logger.warning(f"Invalid max_tokens_per_response value: {data['max_tokens_per_response']}")
-            
-            # Save to database
+                    max_tokens = max(100, min(4000, max_tokens))    # clamp
+                    settings.max_tokens_per_response = max_tokens
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid max_tokens value: {data['max_tokens_per_response']}")
+
+            # Step 7: Save
             db.session.commit()
-            logger.info(f"Updated settings: temp={settings.temperature}, top_p={settings.top_p}, audience={settings.audience_level}, tone={settings.tone}")
-            
-            # Return success response or redirect
+            logger.info(f"Settings updated: temp={settings.temperature}, top_p={settings.top_p}, "
+                        f"audience={settings.audience_level}, tone={settings.tone}")
+
+            # Return JSON if client asked for it, otherwise redirect
             if request.is_json:
-                return jsonify({'status': 'success', 'settings': settings.to_dict()}), 200
-            else:
-                return redirect(url_for('dashboard'))
-        
-        except ValueError as e:
-            logger.error(f"Invalid settings value: {str(e)}")
-            if request.is_json:
-                return jsonify({'error': f'Invalid settings value: {str(e)}'}), 400
-            else:
-                return redirect(url_for('dashboard'))
-        
+                return jsonify({'success': True, 'settings': settings.to_dict()}), 200
+
+            return redirect(url_for('dashboard'))
+
         except Exception as e:
             logger.error(f"Error updating settings: {str(e)}")
             db.session.rollback()
             if request.is_json:
                 return jsonify({'error': str(e)}), 500
-            else:
-                return redirect(url_for('dashboard'))
-    
+            return redirect(url_for('dashboard'))
+
+    @app.route('/get-usage-stats', methods=['GET'])
+    def get_usage_stats():
+        """
+        Return current usage statistics as JSON.
+
+        Response JSON:
+            {
+                "total_requests": int,
+                "total_tokens_input": int,
+                "total_tokens_output": int,
+                "total_tokens": int,
+                "avg_tokens_per_request": int
+            }
+
+        Used by the usage dashboard to refresh numbers without a full page reload.
+        """
+        try:
+            stats = UsageTracker.get_total_usage()
+            recent = UsageTracker.get_recent_usage(limit=5)
+
+            recent_list = [
+                {
+                    'model': log.model_name,
+                    'request_type': log.request_type,
+                    'tokens_input': log.tokens_input,
+                    'tokens_output': log.tokens_output,
+                    'created_at': log.created_at.isoformat()
+                }
+                for log in recent
+            ]
+
+            return jsonify({
+                **stats,
+                'recent': recent_list
+            }), 200
+
+        except Exception as e:
+            logger.error(f"Error fetching usage stats: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
     # ========================================================================
     # PHASE 2: Extended Features (Days 6-11) — Person C's backend routes
     # ========================================================================

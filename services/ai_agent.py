@@ -14,7 +14,7 @@ TODO: Add structured output parsing
 
 import google.generativeai as genai
 import logging
-from typing import Dict
+from typing import Generator
 
 logger = logging.getLogger(__name__)
 
@@ -46,15 +46,19 @@ class AIAgent:
         """
         if not api_key:
             raise ValueError("Google api key is missing")
-        self.client = genai.Client(api_key=api_key)
+        
+        # Configure the genai library with API key
+        genai.configure(api_key=api_key)
         self.model_name = model_name
+        
+        # Test the model is available
         try:
-            self.client.models.generate_content(
-                model=self.model_name,
-                contents="test"
-            )
+            model = genai.GenerativeModel(self.model_name)
+            # Test with a simple request to verify API access
+            model.generate_content("test")
         except Exception as e:
             raise RuntimeError("Model failed to initialize") from e
+        
         logger.info(f"AI Agent initialized with model: {model_name}")
     
     def generate_response(
@@ -66,14 +70,14 @@ class AIAgent:
         max_tokens: int = 1000,
         audience_level: str = "intermediate",
         tone: str = "friendly"
-    ) -> dict:
+    ) -> Generator[str, None, None]:
         """
-        Generate a response to a query using provided context.
+        Generate a streaming response to a query using provided context.
         
         This method:
         1. Builds a system prompt based on audience and tone
-        2. Calls Google Gemini API with the full message
-        3. Returns the full response with token counts
+        2. Calls Google Gemini API with stream=True
+        3. Yields text chunks as they arrive
         
         Args:
             query (str): User's question
@@ -84,16 +88,8 @@ class AIAgent:
             audience_level (str): beginner, intermediate, or expert
             tone (str): formal, casual, technical, or friendly
             
-        Returns:
-            dict: {
-                'text': str - The AI response,
-                'tokens_input': int - Tokens in the input message,
-                'tokens_output': int - Tokens in the response,
-                'tokens_total': int - Sum of input + output
-            }
-            
-        Raises:
-            Exception: If API call fails
+        Yields:
+            str: Text chunks from the response
             
         TODO: Add retry logic for failed requests
         TODO: Add safety checks (content filtering)
@@ -115,45 +111,30 @@ QUESTION:
 
 Please answer the question using ONLY the context provided above. If the answer is not in the context, say so."""
             
-            # Step 3: Count input tokens (before calling API)
-            tokens_input = self._count_tokens(full_message)
-            logger.info(f"Input message: {tokens_input} tokens")
+            # Step 3: Create the model instance
+            model = genai.GenerativeModel(self.model_name)
             
-            # Step 4: Call Google Gemini API using the new genai.Client API
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=full_message,
-                config=types.GenerateContentConfig(
+            # Step 4: Call Google Gemini API with streaming
+            response = model.generate_content(
+                full_message,
+                stream=True,
+                generation_config=genai.types.GenerationConfig(
                     temperature=temperature,
                     top_p=top_p,
                     max_output_tokens=max_tokens,
                 )
             )
             
-            # Step 5: Extract response text
-            response_text = response.text
-            logger.info(f"Received response: {len(response_text)} characters")
+            # Step 5: Yield chunks as they arrive
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+                    
+            logger.info("Response generation completed")
             
-            # Step 6: Count output tokens
-            tokens_output = self._count_tokens(response_text)
-            logger.info(f"Output message: {tokens_output} tokens")
-            
-            # Step 7: Return response with metadata
-            return {
-                'text': response_text,
-                'tokens_input': tokens_input,
-                'tokens_output': tokens_output,
-                'tokens_total': tokens_input + tokens_output
-            }
-        
         except Exception as e:
             logger.error(f"Error generating response: {str(e)}")
-            return {
-                'text': f"Error: {str(e)}",
-                'tokens_input': 0,
-                'tokens_output': 0,
-                'tokens_total': 0
-            }
+            yield f"[ERROR] Failed to generate response: {str(e)}"
     
     def _build_system_prompt(self, audience_level: str, tone: str) -> str:
         """
@@ -202,10 +183,8 @@ Please answer the question using ONLY the context provided above. If the answer 
         TODO: Cache token counts for repeated text
         """
         try:
-            response = self.client.models.count_tokens(
-                model=self.model_name,
-                contents=text
-            )
+            model = genai.GenerativeModel(self.model_name)
+            response = model.count_tokens(text)
             return response.total_tokens
         except Exception as e:
             logger.error(f"Error counting tokens: {str(e)}")
