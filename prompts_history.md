@@ -299,3 +299,6 @@
 ### 27-05-2026 21:25
 - **Prompt**: Now it says: response generated successfully but I'm not seeing any response Go through the whole app and make sure every intended feature works
 
+### 27-05-2026 21:35
+- **Prompt**: I'm getting the 500 error again
+
