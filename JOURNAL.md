@@ -40,8 +40,19 @@
 - **Date**: 18-05-2026 11:26
 - **Prompt**: Now based on what you suggested us, create the whole skeleton of the project, with TODOs and clear docstrings so that the developer is clear on how to implement it
 
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 13:54
+- **User**: default_user
+- **Prompt**: in my current function, I'm returning the raw text response, should I parse it here? I haven't done the frontend and I don't know how the response is supposed to be received by the frontend
 ---
 
+- **CoPilot Mode**: Ask
+- **CoPilot Model**: GPT-5.4 mini
+- **Socratic Mode**: ON
+- **Changes Made**: No code changes. Reviewed the flashcards function contract and explained the missing parsing, return shape, and prompt constraints.
+- **Context and Reasons for Changes**: User asked whether raw model text should be parsed in the AI service and requested a clear step-by-step gap analysis plus prompt improvement notes.
 ### **Interaction Summary: Project Skeleton Creation**
 - **Date**: 18-05-2026 11:30-12:15
 - **Duration**: ~45 minutes
@@ -1439,3 +1450,61 @@ Reference implementations available in `app_trial.py`.
 - **Hook Version**: 1.02
 - **Date**: 27-05-2026 18:28
 - **Prompt**: I got an error when I tried to open the app. I attached a screenshot above. Please fix the error and explain why it happened
+- **Date**: 27-05-2026 13:41
+- **Prompt**: I'm trying to do falshcards right now, explain to me in simple terms like you're a senior developer what this function should implement, expalnation and pseudocode only
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 13:42
+- **User**: default_user
+- **Prompt**: I'm trying to do falshcards right now, explain to me in simple terms like you're a senior developer what this function should implement, expalnation and pseudocode only
+- **CoPilot Mode**: Ask
+- **CoPilot Model**: GPT-5.4 mini
+- **Socratic Mode**: ON
+- **Changes Made**: No code changes. Explained the intended responsibility of the flashcard generator and provided pseudocode only.
+- **Context and Reasons for Changes**: User requested a simple senior-level explanation of the flashcards function without implementation code.
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 13:53
+- **Prompt**: in my current function, I'm returning  the raw text response, should I parse it here? I haven't done the frontend and I don't know how the response is supposed to be received by the frontend Tell me what else this function is supposed to be doing that it's not, in clear steps also, tell me where my pormpt needs improvement
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 14:05
+- **Prompt**: can you add the try, except block after the prompt and explain the flow?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 14:18
+- **Prompt**: I implemented the quiz generation. add validation and parsing and tell me how the prompt can be improved. Right now, what would make the agent hallucinate based on my current prompt?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 18:43
+- **Prompt**: in this file, list the main fundamental things this file should be doing that are essential to the app working and they're not implemented right now Then pinpoint the lines that should be doing them
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 18:54
+- **Prompt**: check what I changed in init, is the validation and the persisting working now?
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 18:56
+- **Prompt**: correct the mismatches based on the chromadb version that I'm using right now and complete init, if there is anything left
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 19:03
+- **Prompt**: Explain to me how _chunk_text work like you're a senior software developer and tell me what was wrong with the last implementation
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 19:06
+- **Prompt**: Now improve my code based on the points that you listed and explain the main changes that you did
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 27-05-2026 19:10
+- **Prompt**: no i want minimum changes and something that works well.do not overdo it. keep it short and simple for now so that I can understand how everything is working.
