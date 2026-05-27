@@ -20,10 +20,8 @@
 ### 18-05-2026 11:44
 - **Prompt**: Revise the daily checklist from day 2 so that person A works mainly on frontend with a side of AI/embeddings, Person B mainly AI/embeddings with a side of backend, and Person C gets backend and a side of frontend. Make sure that whatever they work on mesh together properly
 
-<<<<<<< HEAD
 ### 24-05-2026 12:26
 - **Prompt**: help me fix teh corpus forge db issue thats preventing me from merging
-=======
 ### 18-05-2026 11:53
 - **Prompt**: accept both changes and fix the merge conflict
 
@@ -149,7 +147,6 @@
 
 ### 24-05-2026 11:04
 - **Prompt**: I need you to explain to me why the upload of the documents is not working, and point out the exact lines in the code where that's happening and explain why
->>>>>>> 00d343ce1e3e3265712e45abc7b74902ed9b7e80
 
 ### 24-05-2026 12:27
 - **Prompt**: [Terminal e6781412-ee0d-4d95-aaa4-3a4271533a4c notification: command completed with exit code 1. The terminal has been cleaned up.] Terminal output: PS C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge> cd "c:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge" ; .venv\Scripts\python.exe app.py C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py:15: FutureWarning:   All support for the `google.generativeai` package has ended. It will no longer be receiving  updates or bug fixes. Please switch to the `google.genai` package as soon as possible. See README for more details:  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md    import google.generativeai as genai  * Serving Flask app 'app'  * Debug mode: on INFO:werkzeug:WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.  * Running on all addresses (0.0.0.0)  * Running on http://127.0.0.1:5000  * Running on http://10.188.158.174:5000 INFO:werkzeug:Press CTRL+C to quit INFO:werkzeug: * Restarting with stat C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py:15: FutureWarning:   All support for the `google.generativeai` package has ended. It will no longer be receiving  updates or bug fixes. Please switch to the `google.genai` package as soon as possible. See README for more details:  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md    import google.generativeai as genai WARNING:werkzeug: * Debugger is active! INFO:werkzeug: * Debugger PIN: 114-031-340 INFO:werkzeug: * Detected change in 'C:\\Users\\Yara\\Desktop\\Bsc Year 1 25-26\\AI for software dev\\capstone-project\\capstone-corpus-forge\\config.py', reloading INFO:werkzeug: * Restarting with stat C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py:15: FutureWarning:   All support for the `google.generativeai` package has ended. It will no longer be receiving  updates or bug fixes. Please switch to the `google.genai` package as soon as possible. See README for more details:  https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md    import google.generativeai as genai WARNING:werkzeug: * Debugger is active! INFO:werkzeug: * Debugger PIN: 114-031-340 INFO:werkzeug: * Detected change in 'C:\\Users\\Yara\\Desktop\\Bsc Year 1 25-26\\AI for software dev\\capstone-project\\capstone-corpus-forge\\app.py', reloading INFO:werkzeug: * Restarting with stat Traceback (most recent call last):   File "C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\app.py", line 43, in <module>     from services.ai_agent import AIAgent   File "C:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\services\ai_agent.py", line 15, in <module>     from google import genai ImportError: cannot import name 'genai' from 'google' (unknown location)
@@ -183,6 +180,35 @@
 
 ### 27-05-2026 18:28
 - **Prompt**: I got an error when I tried to open the app. I attached a screenshot above. Please fix the error and explain why it happened
+### 27-05-2026 13:41
+- **Prompt**: I'm trying to do falshcards right now, explain to me in simple terms like you're a senior developer what this function should implement, expalnation and pseudocode only
+
+### 27-05-2026 13:53
+- **Prompt**: in my current function, I'm returning  the raw text response, should I parse it here? I haven't done the frontend and I don't know how the response is supposed to be received by the frontend Tell me what else this function is supposed to be doing that it's not, in clear steps also, tell me where my pormpt needs improvement
+
+### 27-05-2026 14:05
+- **Prompt**: can you add the try, except block after the prompt and explain the flow?
+
+### 27-05-2026 14:18
+- **Prompt**: I implemented the quiz generation. add validation and parsing and tell me how the prompt can be improved. Right now, what would make the agent hallucinate based on my current prompt?
+
+### 27-05-2026 18:43
+- **Prompt**: in this file, list the main fundamental things this file should be doing that are essential to the app working and they're not implemented right now Then pinpoint the lines that should be doing them
+
+### 27-05-2026 18:54
+- **Prompt**: check what I changed in init, is the validation and the persisting working now?
+
+### 27-05-2026 18:56
+- **Prompt**: correct the mismatches based on the chromadb version that I'm using right now and complete init, if there is anything left
+
+### 27-05-2026 19:03
+- **Prompt**: Explain to me how _chunk_text work like you're a senior software developer and tell me what was wrong with the last implementation
+
+### 27-05-2026 19:06
+- **Prompt**: Now improve my code based on the points that you listed and explain the main changes that you did
+
+### 27-05-2026 19:10
+- **Prompt**: no i want minimum changes and something that works well.do not overdo it. keep it short and simple for now so that I can understand how everything is working.
 
 ### 27-05-2026 18:44
 - **Prompt**: Can you explain to me why i get a server error instead of an answer each time I try to prompt the ai? And how can I fix it? Is it more of a frontend problem or ai embeddinsg problem?
