@@ -169,3 +169,6 @@
 ### 27-05-2026 18:43
 - **Prompt**: in this file, list the main fundamental things this file should be doing that are essential to the app working and they're not implemented right now Then pinpoint the lines that should be doing them
 
+### 27-05-2026 18:54
+- **Prompt**: check what I changed in init, is the validation and the persisting working now?
+
