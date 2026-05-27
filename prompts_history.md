@@ -258,3 +258,6 @@
 ### 27-05-2026 20:33
 - **Prompt**: without adding anything else, tell me what person b is supposed to do that is not done yet
 
+### 27-05-2026 20:37
+- **Prompt**: Go through the whole application. Is the ai agent correctly working, receiving files, sending responses If something is not working well, don't make any changes. List them first and explain each in max 3 sentences
+
