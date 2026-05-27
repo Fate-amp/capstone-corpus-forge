@@ -210,3 +210,18 @@
 ### 27-05-2026 19:10
 - **Prompt**: no i want minimum changes and something that works well.do not overdo it. keep it short and simple for now so that I can understand how everything is working.
 
+### 27-05-2026 18:44
+- **Prompt**: Can you explain to me why i get a server error instead of an answer each time I try to prompt the ai? And how can I fix it? Is it more of a frontend problem or ai embeddinsg problem?
+
+### 27-05-2026 18:54
+- **Prompt**: update the journal with our recent interaction
+
+### 27-05-2026 18:54
+- **Prompt**: update the journal with our recent interactions
+
+### 27-05-2026 19:07
+- **Prompt**: Run an analysis of the code and check person A's work. Let me know what is left for that person to do and notify me of any problems/things that need to be fixed
+
+### 27-05-2026 19:08
+- **Prompt**: Run an analysis of the code and check person A (frontend dev in the checklist)'s work. Let me know what is left for that person to do and notify me of any problems/things that need to be fixed
+

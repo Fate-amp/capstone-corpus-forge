@@ -102,6 +102,10 @@
 
 <script>
     // TODO: Day 5 - Implement real-time slider value display
+
+    document.getElementById('temperature').addEventListener('input', (e) => {
+        document.getElementById('temperature-display').textContent = e.target.value;
+    });
     
     const temperatureSlider = document.getElementById('temperature');
     const temperatureDisplay = document.getElementById('temperature-display');
