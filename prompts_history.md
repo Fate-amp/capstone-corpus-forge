@@ -181,3 +181,6 @@
 ### 27-05-2026 19:06
 - **Prompt**: Now improve my code based on the points that you listed and explain the main changes that you did
 
+### 27-05-2026 19:10
+- **Prompt**: no i want minimum changes and something that works well.do not overdo it. keep it short and simple for now so that I can understand how everything is working.
+
