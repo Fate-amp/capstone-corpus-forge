@@ -246,3 +246,6 @@
 ### 27-05-2026 20:24
 - **Prompt**: implement document_processor remaining TODOs and explain what you did in simple terms.
 
+### 27-05-2026 20:28
+- **Prompt**: docx and pytesseract cannot be resolved
+
