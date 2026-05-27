@@ -234,3 +234,6 @@
 ### 27-05-2026 19:47
 - **Prompt**: Modify the css so that the layout is more seemless and nicer to use like notebooklm's. use the color palette attached above
 
+### 27-05-2026 20:16
+- **Prompt**: fix the layout and make it look like note book lm.
+
