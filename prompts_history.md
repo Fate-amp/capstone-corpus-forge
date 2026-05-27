@@ -305,3 +305,6 @@
 ### 27-05-2026 21:41
 - **Prompt**: it says response generated successfully but no response is being shown, pinpoint the issue before making any change
 
+### 27-05-2026 21:54
+- **Prompt**: now I'm seeing my prompt in the page but only a time stamp in the response. Also, minimise the header section by 50% of height and move the tabs flashcards etc to the right of test and make the chatbox smaller so that the response can actually show
+
