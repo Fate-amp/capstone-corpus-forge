@@ -33,7 +33,24 @@
     <!-- CENTER: Chat Interface -->
     <main class="main-content chat-section">
         <div class="chat-header">
-            <h2 id="selected-doc-title">Select a document to begin</h2>
+            <div class="header-top">
+                <h2 id="selected-doc-title">Select a document to begin</h2>
+            </div>
+            <!-- Learning Tools Toolbar -->
+            <div id="learning-toolbar" class="learning-toolbar hidden">
+                <button id="flashcards-btn" class="btn btn-secondary btn-sm" title="Study with flashcards">
+                    📚 Flashcards
+                </button>
+                <button id="generate-flashcards-btn" class="btn btn-primary btn-sm" title="Generate flashcards">
+                    ✨ Generate Flashcards
+                </button>
+                <button id="quiz-btn" class="btn btn-secondary btn-sm" title="Take a quiz">
+                    ❓ Quiz
+                </button>
+                <button id="generate-quiz-btn" class="btn btn-primary btn-sm" title="Generate new quiz">
+                    ✨ Generate Quiz
+                </button>
+            </div>
         </div>
         
         <div class="chat-container">
@@ -107,10 +124,665 @@
     </div>
 </div>
 
+<!-- ========================================================================
+     FLASHCARDS MODAL (NotebookLM Style)
+     ======================================================================== -->
+<div id="flashcards-modal" class="modal modal-lg hidden">
+    <div class="modal-content modal-content-fullscreen">
+        <div class="modal-header flashcards-header">
+            <div>
+                <h3>Flashcards</h3>
+                <p id="flashcards-count" class="modal-subtitle">0 cards</p>
+            </div>
+            <button class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body flashcards-body">
+            <!-- Loading state -->
+            <div id="flashcards-loading" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Generating flashcards...</p>
+            </div>
+
+            <!-- Study interface -->
+            <div id="flashcards-study" class="flashcards-study hidden">
+                <div class="progress-section">
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-label">
+                        Card <span id="current-idx">1</span> of <span id="total-cards">0</span>
+                    </div>
+                </div>
+
+                <!-- The flashcard -->
+                <div class="flashcard-container">
+                    <div class="flashcard" id="flashcard" onclick="window.flashcardManager?.flipCard()">
+                        <div class="flashcard-inner" id="flashcard-inner">
+                            <div class="flashcard-front">
+                                <div class="card-label">Question</div>
+                                <div class="card-text" id="question-text"></div>
+                                <div class="flip-hint">Click to reveal answer</div>
+                            </div>
+                            <div class="flashcard-back">
+                                <div class="card-label">Answer</div>
+                                <div class="card-text" id="answer-text"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="card-nav">
+                    <button class="btn btn-secondary" id="prev-btn" onclick="window.flashcardManager?.prevCard()">
+                        ← Previous
+                    </button>
+                    <button class="btn btn-outline" id="flip-btn" onclick="window.flashcardManager?.flipCard()">
+                        Flip Card
+                    </button>
+                    <button class="btn btn-primary" id="next-btn" onclick="window.flashcardManager?.nextCard()">
+                        Next →
+                    </button>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flashcard-actions">
+                    <button id="regenerate-flashcards-btn" class="btn btn-secondary">🔄 Regenerate</button>
+                    <button id="from-flashcards-to-quiz-btn" class="btn btn-primary">📝 Generate Quiz</button>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="flashcards-empty" class="empty-state">
+                <p>No flashcards yet. Click the button below to generate them from the document.</p>
+                <button class="btn btn-primary btn-lg" onclick="window.dashboardManager?.generateFlashcards()">
+                    ✨ Generate Flashcards
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================
+     QUIZ MODAL (NotebookLM Style)
+     ======================================================================== -->
+<div id="quiz-modal" class="modal modal-lg hidden">
+    <div class="modal-content modal-content-fullscreen">
+        <div class="modal-header quiz-header">
+            <div>
+                <h3>Quiz</h3>
+                <p id="quiz-subtitle" class="modal-subtitle">Test your knowledge</p>
+            </div>
+            <button class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body quiz-body">
+            <!-- Loading state -->
+            <div id="quiz-loading" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Generating quiz...</p>
+            </div>
+
+            <!-- Quiz form -->
+            <form id="quiz-form" class="quiz-form hidden">
+                <input type="hidden" id="quiz-id-input" value="">
+                
+                <!-- Progress indicator -->
+                <div class="quiz-progress" id="quiz-progress"></div>
+
+                <!-- Questions container -->
+                <div id="questions-container"></div>
+
+                <!-- Submit button -->
+                <div class="quiz-submit-area">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="window.quizManager?.submitQuiz()">
+                        Submit Quiz
+                    </button>
+                    <div id="quiz-error" class="error-message hidden"></div>
+                </div>
+            </form>
+
+            <!-- Empty state -->
+            <div id="quiz-empty" class="empty-state">
+                <p>No quiz generated yet. Click the button below to generate one.</p>
+                <button class="btn btn-primary btn-lg" onclick="window.dashboardManager?.generateQuiz()">
+                    ✨ Generate Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================
+     QUIZ RESULTS MODAL (NotebookLM Style)
+     ======================================================================== -->
+<div id="results-modal" class="modal modal-lg hidden">
+    <div class="modal-content modal-content-fullscreen">
+        <div class="modal-header results-header">
+            <div>
+                <h3>Quiz Results</h3>
+                <p id="results-subtitle" class="modal-subtitle">Here's how you did</p>
+            </div>
+            <button class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body results-body">
+            <!-- Score card -->
+            <div id="score-card" class="score-card">
+                <div class="score-big" id="score-display">0/0</div>
+                <div class="score-pct" id="percentage-display">0%</div>
+                <div class="score-label" id="score-label">Test your knowledge!</div>
+            </div>
+
+            <!-- Circular progress -->
+            <div class="circle-wrap">
+                <svg viewBox="0 0 100 100" class="circle-svg">
+                    <circle cx="50" cy="50" r="44" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+                    <circle
+                        id="progress-circle"
+                        cx="50" cy="50" r="44"
+                        fill="none"
+                        stroke="#4a6fa5"
+                        stroke-width="10"
+                        stroke-dasharray="0 276.46"
+                        stroke-linecap="round"
+                        transform="rotate(-90 50 50)"
+                    />
+                </svg>
+                <div class="circle-text" id="circle-pct">0%</div>
+            </div>
+
+            <!-- Question review -->
+            <div id="review-section" class="review-section"></div>
+
+            <!-- Action buttons -->
+            <div class="results-actions">
+                <button id="retake-quiz-btn" class="btn btn-primary">Retake Quiz</button>
+                <button id="back-to-flashcards-btn" class="btn btn-secondary">Back to Flashcards</button>
+                <button id="close-results-btn" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // ========================================================================
-    // Upload Modal & File Validation
+    // Global Manager Objects
     // ========================================================================
+
+    window.dashboardManager = {
+        selectedDocId: null,
+        selectedDocTitle: null,
+        currentFlashcards: [],
+        currentQuiz: null,
+        currentQuizQuestions: [],
+        currentResults: null,
+
+        init() {
+            this.setupEventListeners();
+        },
+
+        setupEventListeners() {
+            // Learning toolbar buttons
+            document.getElementById('flashcards-btn')?.addEventListener('click', () => this.openFlashcardsModal());
+            document.getElementById('generate-flashcards-btn')?.addEventListener('click', () => this.generateFlashcards());
+            document.getElementById('quiz-btn')?.addEventListener('click', () => this.openQuizModal());
+            document.getElementById('generate-quiz-btn')?.addEventListener('click', () => this.generateQuiz());
+
+            // Modal action buttons
+            document.getElementById('regenerate-flashcards-btn')?.addEventListener('click', () => this.generateFlashcards());
+            document.getElementById('from-flashcards-to-quiz-btn')?.addEventListener('click', () => {
+                this.closeFlashcardsModal();
+                this.generateQuiz();
+            });
+            document.getElementById('retake-quiz-btn')?.addEventListener('click', () => this.retakeQuiz());
+            document.getElementById('back-to-flashcards-btn')?.addEventListener('click', () => {
+                this.closeResultsModal();
+                this.openFlashcardsModal();
+            });
+            document.getElementById('close-results-btn')?.addEventListener('click', () => this.closeResultsModal());
+
+            // Modal close buttons
+            document.querySelectorAll('.modal-close').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = e.target.closest('.modal');
+                    if (modal) modal.classList.add('hidden');
+                });
+            });
+
+            // Close modal on background click
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.classList.add('hidden');
+                });
+            });
+        },
+
+        setSelectedDocument(docId, docTitle) {
+            this.selectedDocId = docId;
+            this.selectedDocTitle = docTitle;
+            document.getElementById('learning-toolbar').classList.remove('hidden');
+            document.getElementById('learning-toolbar').classList.add('visible');
+        },
+
+        async generateFlashcards() {
+            if (!this.selectedDocId) {
+                showNotification('Please select a document first', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('flashcards-modal');
+            const loadingDiv = document.getElementById('flashcards-loading');
+            const studyDiv = document.getElementById('flashcards-study');
+            const emptyDiv = document.getElementById('flashcards-empty');
+
+            loadingDiv.classList.remove('hidden');
+            studyDiv.classList.add('hidden');
+            emptyDiv.classList.add('hidden');
+            modal.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/generate-flashcards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ document_id: this.selectedDocId, num_cards: 10 })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.currentFlashcards = data.flashcards || [];
+                    this.showFlashcardsStudy();
+                } else {
+                    showNotification('Error generating flashcards: ' + (data.error || 'Unknown error'), 'error');
+                    emptyDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                showNotification('Network error: ' + err, 'error');
+                emptyDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        },
+
+        showFlashcardsStudy() {
+            const studyDiv = document.getElementById('flashcards-study');
+            const emptyDiv = document.getElementById('flashcards-empty');
+
+            if (this.currentFlashcards.length === 0) {
+                emptyDiv.classList.remove('hidden');
+                studyDiv.classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('flashcards-count').textContent = `${this.currentFlashcards.length} cards`;
+            document.getElementById('total-cards').textContent = this.currentFlashcards.length;
+
+            studyDiv.classList.remove('hidden');
+            emptyDiv.classList.add('hidden');
+
+            window.flashcardManager.init(this.currentFlashcards);
+        },
+
+        openFlashcardsModal() {
+            if (this.currentFlashcards.length === 0) {
+                showNotification('No flashcards available. Generate them first.', 'info');
+                return;
+            }
+            document.getElementById('flashcards-modal').classList.remove('hidden');
+            window.flashcardManager.updateCard();
+        },
+
+        closeFlashcardsModal() {
+            document.getElementById('flashcards-modal').classList.add('hidden');
+        },
+
+        async generateQuiz() {
+            if (!this.selectedDocId) {
+                showNotification('Please select a document first', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('quiz-modal');
+            const loadingDiv = document.getElementById('quiz-loading');
+            const formDiv = document.getElementById('quiz-form');
+            const emptyDiv = document.getElementById('quiz-empty');
+
+            loadingDiv.classList.remove('hidden');
+            formDiv.classList.add('hidden');
+            emptyDiv.classList.add('hidden');
+            modal.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/generate-quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ document_id: this.selectedDocId, num_questions: 5 })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.currentQuiz = data.quiz;
+                    this.currentQuizQuestions = data.questions || [];
+                    this.showQuizForm();
+                } else {
+                    showNotification('Error generating quiz: ' + (data.error || 'Unknown error'), 'error');
+                    emptyDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                showNotification('Network error: ' + err, 'error');
+                emptyDiv.classList.remove('hidden');
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        },
+
+        showQuizForm() {
+            const formDiv = document.getElementById('quiz-form');
+            const emptyDiv = document.getElementById('quiz-empty');
+            const container = document.getElementById('questions-container');
+
+            if (this.currentQuizQuestions.length === 0) {
+                emptyDiv.classList.remove('hidden');
+                formDiv.classList.add('hidden');
+                return;
+            }
+
+            container.innerHTML = '';
+
+            this.currentQuizQuestions.forEach((question, index) => {
+                const card = document.createElement('div');
+                card.className = 'question-card';
+
+                let questionHtml = `
+                    <div class="question-number">Question ${index + 1} of ${this.currentQuizQuestions.length}</div>
+                    <div class="question-text">${question.question_text}</div>
+                `;
+
+                if (question.question_type === 'multiple_choice' && question.options) {
+                    const letters = ['A', 'B', 'C', 'D'];
+                    questionHtml += '<div class="options-list">';
+                    question.options.forEach((option, optIndex) => {
+                        questionHtml += `
+                            <label class="option-label">
+                                <input type="radio" name="answer_${question.id}" value="${letters[optIndex]}" required>
+                                <span class="option-letter">${letters[optIndex]}</span>
+                                <span class="option-text">${option}</span>
+                            </label>
+                        `;
+                    });
+                    questionHtml += '</div>';
+                } else {
+                    questionHtml += `
+                        <div class="short-answer-wrap">
+                            <textarea name="answer_${question.id}" class="short-answer-input" placeholder="Type your answer here..." rows="3" required></textarea>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = questionHtml;
+                container.appendChild(card);
+            });
+
+            formDiv.classList.remove('hidden');
+            emptyDiv.classList.add('hidden');
+        },
+
+        openQuizModal() {
+            if (this.currentQuizQuestions.length === 0) {
+                showNotification('No quiz available. Generate one first.', 'info');
+                return;
+            }
+            document.getElementById('quiz-modal').classList.remove('hidden');
+        },
+
+        closeQuizModal() {
+            document.getElementById('quiz-modal').classList.add('hidden');
+        },
+
+        async submitQuiz() {
+            const formDiv = document.getElementById('quiz-form');
+            const answers = {};
+            let allAnswered = true;
+
+            this.currentQuizQuestions.forEach(question => {
+                if (question.question_type === 'multiple_choice') {
+                    const radio = formDiv.querySelector(`input[name="answer_${question.id}"]:checked`);
+                    if (radio) {
+                        answers[question.id] = radio.value;
+                    } else {
+                        allAnswered = false;
+                    }
+                } else {
+                    const textarea = formDiv.querySelector(`textarea[name="answer_${question.id}"]`);
+                    if (textarea && textarea.value.trim()) {
+                        answers[question.id] = textarea.value.trim();
+                    } else {
+                        allAnswered = false;
+                    }
+                }
+            });
+
+            if (!allAnswered) {
+                document.getElementById('quiz-error').textContent = 'Please answer all questions';
+                document.getElementById('quiz-error').classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('/submit-answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quiz_id: this.currentQuiz.id, answers: answers })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.currentResults = data.result;
+                    this.closeQuizModal();
+                    this.showResultsModal();
+                } else {
+                    document.getElementById('quiz-error').textContent = 'Error: ' + (data.error || 'Unknown error');
+                    document.getElementById('quiz-error').classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById('quiz-error').textContent = 'Network error: ' + err;
+                document.getElementById('quiz-error').classList.remove('hidden');
+            }
+        },
+
+        showResultsModal() {
+            const modal = document.getElementById('results-modal');
+            const result = this.currentResults;
+
+            // Calculate percentage
+            const percentage = result.total_questions > 0 
+                ? Math.round((result.score / result.total_questions) * 100)
+                : 0;
+
+            // Update score display
+            document.getElementById('score-display').textContent = `${result.score} / ${result.total_questions}`;
+            document.getElementById('percentage-display').textContent = `${percentage}%`;
+            document.getElementById('circle-pct').textContent = `${percentage}%`;
+
+            // Update progress circle
+            const circumference = 276.46;
+            const dashArray = (percentage / 100) * circumference;
+            document.getElementById('progress-circle').setAttribute('stroke-dasharray', `${dashArray} ${circumference}`);
+
+            // Update color and label
+            let color, label;
+            if (percentage >= 80) {
+                color = '#2e7d32';
+                label = 'Excellent work! 🎉';
+            } else if (percentage >= 60) {
+                color = '#f57c00';
+                label = 'Good effort! Keep studying. 📚';
+            } else {
+                color = '#c62828';
+                label = 'Keep practicing — you\'ve got this! 💪';
+            }
+
+            document.getElementById('progress-circle').setAttribute('stroke', color);
+            document.getElementById('score-label').textContent = label;
+
+            // Build review section
+            const reviewSection = document.getElementById('review-section');
+            reviewSection.innerHTML = '<h4 style="margin-bottom: 16px; font-size: 1.1rem;">Question Review</h4>';
+
+            this.currentQuizQuestions.forEach((question, index) => {
+                const userAnswer = result.user_answers?.[question.id] || '';
+                const correctAnswer = question.correct_answer || '';
+                const isCorrect = (userAnswer.toLowerCase().trim()) === (correctAnswer.toLowerCase().trim());
+
+                const reviewCard = document.createElement('div');
+                reviewCard.className = `review-card ${isCorrect ? 'correct' : 'incorrect'}`;
+
+                let reviewHtml = `
+                    <div class="review-icon">${isCorrect ? '✅' : '❌'}</div>
+                    <div class="review-content">
+                        <div class="review-q-num">Question ${index + 1}</div>
+                        <div class="review-q-text">${question.question_text}</div>
+                `;
+
+                if (question.question_type === 'multiple_choice' && question.options) {
+                    const letters = ['A', 'B', 'C', 'D'];
+                    reviewHtml += '<div class="review-options">';
+                    question.options.forEach((option, optIndex) => {
+                        const letter = letters[optIndex];
+                        let optClass = '';
+                        if (letter === correctAnswer) optClass = 'opt-correct';
+                        else if (letter === userAnswer && !isCorrect) optClass = 'opt-wrong';
+
+                        reviewHtml += `
+                            <div class="review-option ${optClass}">
+                                <span class="opt-ltr">${letter}</span>
+                                <span>${option}</span>
+                                ${letter === correctAnswer ? '<span class="opt-tag">✓ Correct</span>' : ''}
+                                ${letter === userAnswer && !isCorrect ? '<span class="opt-tag wrong-tag">✗ Your answer</span>' : ''}
+                            </div>
+                        `;
+                    });
+                    reviewHtml += '</div>';
+                } else {
+                    reviewHtml += `
+                        <div class="review-answers">
+                            <div class="ans-row your-ans">
+                                <span class="ans-label">Your answer:</span>
+                                <span>${userAnswer || '(no answer)'}</span>
+                            </div>
+                            <div class="ans-row correct-ans">
+                                <span class="ans-label">Expected:</span>
+                                <span>${correctAnswer}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (question.explanation) {
+                    reviewHtml += `<div class="explanation"><strong>Explanation:</strong> ${question.explanation}</div>`;
+                }
+
+                reviewHtml += '</div>';
+                reviewCard.innerHTML = reviewHtml;
+                reviewSection.appendChild(reviewCard);
+            });
+
+            modal.classList.remove('hidden');
+        },
+
+        closeResultsModal() {
+            document.getElementById('results-modal').classList.add('hidden');
+        },
+
+        retakeQuiz() {
+            document.getElementById('quiz-form').reset();
+            document.getElementById('quiz-error').classList.add('hidden');
+            this.openQuizModal();
+        }
+    };
+
+    // ========================================================================
+    // Flashcard Manager
+    // ========================================================================
+
+    window.flashcardManager = {
+        flashcards: [],
+        currentIndex: 0,
+        isFlipped: false,
+
+        init(flashcards) {
+            this.flashcards = flashcards;
+            this.currentIndex = 0;
+            this.isFlipped = false;
+            this.updateCard();
+        },
+
+        updateCard() {
+            if (this.flashcards.length === 0) return;
+
+            const card = this.flashcards[this.currentIndex];
+            document.getElementById('question-text').textContent = card.question;
+            document.getElementById('answer-text').textContent = card.answer;
+            document.getElementById('current-idx').textContent = this.currentIndex + 1;
+
+            this.isFlipped = false;
+            document.getElementById('flashcard-inner').classList.remove('flipped');
+
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            prevBtn.disabled = this.currentIndex === 0;
+            nextBtn.disabled = this.currentIndex === this.flashcards.length - 1;
+            nextBtn.textContent = this.currentIndex === this.flashcards.length - 1 ? '✓ Done' : 'Next →';
+
+            const pct = ((this.currentIndex + 1) / this.flashcards.length) * 100;
+            document.getElementById('progress-bar').style.width = pct + '%';
+        },
+
+        flipCard() {
+            this.isFlipped = !this.isFlipped;
+            const inner = document.getElementById('flashcard-inner');
+            if (this.isFlipped) {
+                inner.classList.add('flipped');
+            } else {
+                inner.classList.remove('flipped');
+            }
+        },
+
+        nextCard() {
+            if (this.currentIndex < this.flashcards.length - 1) {
+                this.currentIndex++;
+                this.updateCard();
+            }
+        },
+
+        prevCard() {
+            if (this.currentIndex > 0) {
+                this.currentIndex--;
+                this.updateCard();
+            }
+        }
+    };
+
+    // ========================================================================
+    // Quiz Manager
+    // ========================================================================
+
+    window.quizManager = {
+        submitQuiz() {
+            window.dashboardManager.submitQuiz();
+        }
+    };
+
+    // ========================================================================
+    // Initialize on page load
+    // ========================================================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+        window.dashboardManager.init();
+    });
 
     const uploadModal = document.getElementById('upload-modal');
     const uploadBtn = document.getElementById('upload-btn');

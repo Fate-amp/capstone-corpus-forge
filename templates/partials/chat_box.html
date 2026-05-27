@@ -105,30 +105,15 @@
     // Check initial state
     updateChatInputState();
     
-    // Listen for storage events (document selection from sidebar)
+    // Listen for custom event dispatched when document is selected
+    document.addEventListener('documentSelected', updateChatInputState);
+    
+    // Also listen for storage events (document selection from sidebar)
     window.addEventListener('storage', (e) => {
         if (e.key === 'selectedDocId' || e.key === 'selectedDocTitle') {
             updateChatInputState();
         }
     });
-    
-    // Note: We also need to call this whenever a document is selected
-    // The documents_sidebar.html selectDocument() function will need to
-    // trigger this, or we can use a custom event
-    // For now, we'll use a MutationObserver to watch for selected class changes
-    const observer = new MutationObserver(() => {
-        updateChatInputState();
-    });
-    
-    // Watch for changes to document items
-    const documentList = document.querySelector('.documents-list-items');
-    if (documentList) {
-        observer.observe(documentList, {
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['class']
-        });
-    }
     
     // ========================================================================
     // Chat Form Submission - Full Implementation with Streaming

@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz Results – {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="results-page">
+
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+        <h2>Quiz Results</h2>
+        <p class="quiz-title">{{ quiz.title }}</p>
+    </div>
+
+    {% if result %}
+    <!-- Score card -->
+    {% set pct = (result.score / result.total_questions * 100) | round(1) if result.total_questions > 0 else 0 %}
+    <div class="score-card {% if pct >= 80 %}score-excellent{% elif pct >= 60 %}score-good{% else %}score-needs-work{% endif %}">
+        <div class="score-big">{{ result.score }} / {{ result.total_questions }}</div>
+        <div class="score-pct">{{ pct }}%</div>
+        <div class="score-label">
+            {% if pct >= 80 %}Excellent work! 🎉
+            {% elif pct >= 60 %}Good effort! Keep studying. 📚
+            {% else %}Keep practicing — you've got this! 💪
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Circular progress -->
+    <div class="circle-wrap">
+        <svg viewBox="0 0 100 100" class="circle-svg">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+            <circle
+                cx="50" cy="50" r="44"
+                fill="none"
+                stroke="{% if pct >= 80 %}#2e7d32{% elif pct >= 60 %}#f57c00{% else %}#c62828{% endif %}"
+                stroke-width="10"
+                stroke-dasharray="{{ (pct / 100 * 276.46) | round(2) }} 276.46"
+                stroke-linecap="round"
+                transform="rotate(-90 50 50)"
+            />
+        </svg>
+        <div class="circle-text">{{ pct | int }}%</div>
+    </div>
+
+    <!-- Question-by-question review -->
+    {% if questions and result.user_answers %}
+    <h3 class="review-heading">Question Review</h3>
+
+    {% for question in questions %}
+    {% set q_id = question.id | string %}
+    {% set user_ans = result.user_answers.get(q_id, '') %}
+    {% set correct_ans = question.correct_answer %}
+    {% set is_correct = (user_ans | lower | trim) == (correct_ans | lower | trim) %}
+
+    <div class="review-card {% if is_correct %}correct{% else %}incorrect{% endif %}">
+        <div class="review-icon">{% if is_correct %}✅{% else %}❌{% endif %}</div>
+
+        <div class="review-content">
+            <div class="review-q-num">Question {{ loop.index }}</div>
+            <div class="review-q-text">{{ question.question_text }}</div>
+
+            {% if question.question_type == 'multiple_choice' and question.options %}
+            <!-- Show MC options with highlighting -->
+            <div class="review-options">
+                {% set letters = ['A', 'B', 'C', 'D'] %}
+                {% for option in question.options %}
+                {% set letter = letters[loop.index0] %}
+                <div class="review-option
+                    {% if letter == correct_ans %}opt-correct{% endif %}
+                    {% if letter == user_ans and not is_correct %}opt-wrong{% endif %}
+                ">
+                    <span class="opt-ltr">{{ letter }}</span>
+                    <span>{{ option }}</span>
+                    {% if letter == correct_ans %}<span class="opt-tag">✓ Correct</span>{% endif %}
+                    {% if letter == user_ans and not is_correct %}<span class="opt-tag wrong-tag">✗ Your answer</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Short answer review -->
+            <div class="review-answers">
+                <div class="ans-row your-ans">
+                    <span class="ans-label">Your answer:</span>
+                    <span>{{ user_ans or '(no answer)' }}</span>
+                </div>
+                <div class="ans-row correct-ans">
+                    <span class="ans-label">Expected:</span>
+                    <span>{{ correct_ans }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if question.explanation %}
+            <div class="explanation">
+                <strong>Explanation:</strong> {{ question.explanation }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Action buttons -->
+    <div class="results-actions">
+        <a href="{{ url_for('view_quiz', quiz_id=quiz.id) }}" class="btn btn-primary">
+            Retake Quiz
+        </a>
+        <a href="{{ url_for('view_flashcards', doc_id=quiz.document_id) }}" class="btn btn-secondary">
+            Study Flashcards
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p>No results found. It looks like the quiz hasn't been submitted yet.</p>
+        <a href="{{ url_for('view_quiz', quiz_id=quiz.id) }}" class="btn btn-primary">Take the Quiz</a>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .results-page { max-width: 760px; margin: 0 auto; }
+    .quiz-title { color: #666; margin-top: 4px; }
+
+    /* Score card */
+    .score-card {
+        text-align: center;
+        border-radius: 14px;
+        padding: 32px;
+        margin-bottom: 24px;
+        color: #fff;
+    }
+    .score-excellent  { background: #2e7d32; }
+    .score-good       { background: #f57c00; }
+    .score-needs-work { background: #c62828; }
+
+    .score-big { font-size: 3rem; font-weight: 700; }
+    .score-pct { font-size: 1.4rem; opacity: 0.9; }
+    .score-label { margin-top: 10px; font-size: 1.1rem; }
+
+    /* Circle */
+    .circle-wrap { position: relative; width: 120px; margin: 0 auto 32px; }
+    .circle-svg { width: 120px; height: 120px; }
+    .circle-text {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.4rem; font-weight: 700;
+    }
+
+    /* Review */
+    .review-heading { font-size: 1.2rem; margin-bottom: 16px; border-bottom: 2px solid #eee; padding-bottom: 8px; }
+
+    .review-card {
+        display: flex;
+        gap: 16px;
+        background: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        border-left: 4px solid transparent;
+    }
+    .review-card.correct   { border-left-color: #2e7d32; }
+    .review-card.incorrect { border-left-color: #c62828; }
+
+    .review-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .review-content { flex: 1; }
+    .review-q-num { font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+                    letter-spacing: 1px; color: #888; margin-bottom: 6px; }
+    .review-q-text { font-weight: 600; margin-bottom: 14px; line-height: 1.5; }
+
+    .review-options { display: flex; flex-direction: column; gap: 8px; }
+    .review-option {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px; border-radius: 6px;
+        background: #f8f8f8;
+    }
+    .review-option.opt-correct { background: #e8f5e9; font-weight: 600; }
+    .review-option.opt-wrong   { background: #ffebee; }
+    .opt-ltr {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 24px; height: 24px; border-radius: 50%; background: #e0e0e0;
+        font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+    }
+    .opt-tag { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: #2e7d32; }
+    .wrong-tag { color: #c62828; }
+
+    .review-answers { display: flex; flex-direction: column; gap: 8px; }
+    .ans-row { display: flex; gap: 8px; padding: 8px 12px; border-radius: 6px; }
+    .your-ans    { background: #ffebee; }
+    .correct-ans { background: #e8f5e9; }
+    .ans-label   { font-weight: 600; min-width: 110px; }
+
+    .explanation {
+        margin-top: 12px;
+        font-size: 0.9rem;
+        color: #555;
+        background: #f5f5f5;
+        border-radius: 6px;
+        padding: 10px 14px;
+    }
+
+    .results-actions { display: flex; gap: 12px; justify-content: center; margin-top: 32px; flex-wrap: wrap; }
+</style>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz – {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="quiz-page">
+
+    <div class="page-header">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+        <h2>{{ quiz.title }}</h2>
+        {% if quiz.description %}
+        <p class="quiz-description">{{ quiz.description }}</p>
+        {% endif %}
+    </div>
+
+    {% if not questions %}
+    <div class="empty-state">
+        <p>This quiz has no questions. Something may have gone wrong during generation.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go Back</a>
+    </div>
+
+    {% else %}
+    <form id="quiz-form">
+        <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+
+        {% for question in questions %}
+        <div class="question-card" id="q-{{ question.id }}">
+            <div class="question-number">Question {{ loop.index }} of {{ questions|length }}</div>
+
+            <div class="question-text">{{ question.question_text }}</div>
+
+            {% if question.question_type == 'multiple_choice' and question.options %}
+            <!-- Multiple choice options -->
+            <div class="options-list">
+                {% set letters = ['A', 'B', 'C', 'D'] %}
+                {% for option in question.options %}
+                <label class="option-label">
+                    <input
+                        type="radio"
+                        name="answer_{{ question.id }}"
+                        value="{{ letters[loop.index0] }}"
+                        required
+                    >
+                    <span class="option-letter">{{ letters[loop.index0] }}</span>
+                    <span class="option-text">{{ option }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Short answer -->
+            <div class="short-answer-wrap">
+                <textarea
+                    name="answer_{{ question.id }}"
+                    class="short-answer-input"
+                    placeholder="Type your answer here…"
+                    rows="3"
+                    required
+                ></textarea>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="quiz-submit-area">
+            <button type="button" class="btn btn-primary btn-lg" onclick="submitQuiz()">
+                Submit Quiz
+            </button>
+            <div id="submit-error" class="error-message hidden"></div>
+        </div>
+    </form>
+
+    <!-- Hidden: quiz ID for JS -->
+    <script>
+        const QUIZ_ID = {{ quiz.id }};
+        const TOTAL_QUESTIONS = {{ questions|length }};
+
+        function submitQuiz() {
+            const form = document.getElementById('quiz-form');
+
+            // Collect answers
+            const answers = {};
+            let allAnswered = true;
+
+            {% for question in questions %}
+            {% if question.question_type == 'multiple_choice' %}
+            const sel_{{ question.id }} = form.querySelector('input[name="answer_{{ question.id }}"]:checked');
+            if (sel_{{ question.id }}) {
+                answers['{{ question.id }}'] = sel_{{ question.id }}.value;
+            } else {
+                allAnswered = false;
+            }
+            {% else %}
+            const ta_{{ question.id }} = form.querySelector('textarea[name="answer_{{ question.id }}"]');
+            if (ta_{{ question.id }} && ta_{{ question.id }}.value.trim()) {
+                answers['{{ question.id }}'] = ta_{{ question.id }}.value.trim();
+            } else {
+                allAnswered = false;
+            }
+            {% endif %}
+            {% endfor %}
+
+            if (!allAnswered) {
+                const errEl = document.getElementById('submit-error');
+                errEl.textContent = 'Please answer all questions before submitting.';
+                errEl.classList.remove('hidden');
+                errEl.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            // Submit to backend
+            const submitBtn = document.querySelector('.quiz-submit-area .btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting…';
+
+            fetch('/submit-answer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quiz_id: QUIZ_ID, answers: answers })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to results page
+                    window.location.href = '/quiz-results/' + QUIZ_ID;
+                } else {
+                    const errEl = document.getElementById('submit-error');
+                    errEl.textContent = 'Error: ' + (data.error || 'Unknown error');
+                    errEl.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Quiz';
+                }
+            })
+            .catch(err => {
+                const errEl = document.getElementById('submit-error');
+                errEl.textContent = 'Network error: ' + err;
+                errEl.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Quiz';
+            });
+        }
+    </script>
+    {% endif %}
+
+</div>
+
+<style>
+    .quiz-page { max-width: 760px; margin: 0 auto; }
+    .quiz-description { color: #666; margin-top: 4px; }
+
+    .question-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 28px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        border-left: 4px solid var(--color-primary, #4a6fa5);
+    }
+    .question-number { font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+                       letter-spacing: 1px; color: var(--color-primary, #4a6fa5); margin-bottom: 10px; }
+    .question-text { font-size: 1.05rem; font-weight: 600; margin-bottom: 18px; line-height: 1.5; }
+
+    .options-list { display: flex; flex-direction: column; gap: 10px; }
+    .option-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1.5px solid #e0e0e0;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .option-label:hover { border-color: var(--color-primary, #4a6fa5); background: #f0f4ff; }
+    .option-label input[type="radio"] { display: none; }
+    .option-label:has(input:checked) {
+        border-color: var(--color-primary, #4a6fa5);
+        background: #e8efff;
+    }
+    .option-letter {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+    .option-label:has(input:checked) .option-letter {
+        background: var(--color-primary, #4a6fa5);
+        color: #fff;
+    }
+    .option-text { line-height: 1.5; }
+
+    .short-answer-input {
+        width: 100%;
+        border: 1.5px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px;
+        font-size: 0.95rem;
+        resize: vertical;
+        transition: border-color 0.2s;
+    }
+    .short-answer-input:focus { outline: none; border-color: var(--color-primary, #4a6fa5); }
+
+    .quiz-submit-area { text-align: center; padding: 24px 0; }
+    .btn-lg { padding: 14px 40px; font-size: 1.05rem; }
+
+    .error-message { color: #d32f2f; margin-top: 12px; font-size: 0.9rem; }
+    .hidden { display: none !important; }
+</style>
+{% endblock %}
