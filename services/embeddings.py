@@ -245,22 +245,54 @@ class EmbeddingsService:
             # Get collection for this document
             collection_name = f"doc_{doc_id}"
             collection = self.chromadb_client.get_collection(collection_name)
-            
+
             # Query for similar chunks
             results = collection.query(
                 query_texts=[query],
                 n_results=top_k,
             )
-            
-            # Extract and concatenate chunks
+
+            # Extract, filter by min_similarity (if distances provided), and deduplicate
             retrieved_chunks = []
-            if results and results['documents']:
-                for chunk in results['documents'][0]:
+            seen = set()
+
+            if results and results.get('documents'):
+                docs_list = results.get('documents')[0]
+                metas_list = None
+                dists_list = None
+                if results.get('metadatas'):
+                    metas_list = results.get('metadatas')[0]
+                if results.get('distances'):
+                    dists_list = results.get('distances')[0]
+
+                for i, chunk in enumerate(docs_list):
+                    # compute a best-effort similarity if distances present and in [0,1]
+                    accept = True
+                    if dists_list and i < len(dists_list):
+                        try:
+                            dist = float(dists_list[i])
+                            # if distance looks normalized (0..1), convert to similarity
+                            if 0.0 <= dist <= 1.0:
+                                similarity = 1.0 - dist
+                                if similarity < min_similarity:
+                                    accept = False
+                        except Exception:
+                            # cannot interpret distance, do not filter
+                            pass
+
+                    if not accept:
+                        continue
+
+                    # deduplicate by chunk text
+                    key = chunk.strip()
+                    if not key or key in seen:
+                        continue
+                    seen.add(key)
                     retrieved_chunks.append(chunk)
-            
+
             context = "\n\n".join(retrieved_chunks)
             logger.info(f"Retrieved {len(retrieved_chunks)} chunks for query in doc {doc_id}")
-            
+
             return context
         
         except Exception as e:
@@ -287,17 +319,3 @@ class EmbeddingsService:
         except Exception as e:
             logger.warning(f"Could not delete embeddings for doc {doc_id}: {str(e)}")
             return False
-
-if __name__=='__main__':
-    import os
-    from dotenv import load_dotenv
-    
-    # Load .env file into environment variables
-    load_dotenv()
-    
-    api_key = os.getenv('GOOGLE_API_KEY')
-    if not api_key:
-        print("ERROR: GOOGLE_API_KEY not set in .env file")
-        exit(1)
-    embed=EmbeddingsService(api_key)
-    print(f"Embedding was initialized")

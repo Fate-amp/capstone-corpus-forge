@@ -381,9 +381,54 @@ Please answer the question using ONLY the context provided above. If the answer 
         Returns:
             str: Code review report
         """
-        pass
+        prompt = f"""
+You are a senior software developer. Review the provided code and produce a concise, actionable review.
+Audience level: {audience_level}.
+
+Tasks:
+- List bugs with file/line references and impact, sorted by severity.
+- List missing edge cases and inputs not handled.
+- Suggest improvements for performance, readability, and best practices with minimal code fixes.
+
+Output requirements:
+- Return ONLY valid JSON (no explanations, no markdown fences).
+- JSON object schema: {"issues": [{{"id","severity","lines","title","description","fix"}}], "summary": "short text"}.
+
+Base findings ONLY on the provided code.
+
+CODE:
+{code_text}
+"""
+
+        try:
+            ai_resp = self.generate_response(
+                prompt,
+                code_text,
+                temperature=0.2,
+                top_p=0.3,
+                max_tokens=2000,
+                audience_level=audience_level,
+            )
+
+            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            raw = raw.strip()
+
+            # Remove accidental markdown fences
+            raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+            raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
+
+            try:
+                parsed = json.loads(raw)
+                return parsed
+            except Exception:
+                # If model didn't return JSON, return raw text under a key
+                return {"report": raw}
+
+        except Exception as e:
+            logger.error(f"Error generating code review: {str(e)}")
+            return {"error": str(e), "report": ""}
     
-    def analyze_architecture(self, code_text: str) -> str:
+    def analyze_architecture(self, code_text: str, focus: str = None) -> Dict:
         """
         Generate architecture analysis for uploaded code.
         
@@ -395,9 +440,56 @@ Please answer the question using ONLY the context provided above. If the answer 
         Returns:
             str: Architecture analysis report
         """
-        pass
+        prompt = f"""
+You are a senior software architect. Analyze the system architecture in the provided code.
+Audience: intermediate.
+
+Focus: {focus or 'overall architecture and components'}.
+
+Tasks:
+- Identify top-level components/modules and their responsibilities.
+- Describe data flow between components (inputs, outputs, major data structures).
+- Describe control flow for critical paths (request handling, main algorithms).
+- Note external dependencies, integration points, and likely runtime assumptions.
+- Call out potential bottlenecks, concurrency concerns, and scaling notes.
+- Provide a short list of prioritized recommendations (refactors, tests, observability).
+
+Output requirements:
+- Return ONLY valid JSON (no explanation, no markdown fences).
+- JSON schema: {"components": [{"name","responsibility","interfaces"}], "data_flow": "short text", "control_flow": "short text", "dependencies": [], "assumptions": [], "recommendations": [], "summary": "short text"}
+
+CODE:
+{code_text}
+"""
+
+        try:
+            ai_resp = self.generate_response(
+                prompt,
+                code_text,
+                temperature=0.2,
+                top_p=0.3,
+                max_tokens=2000,
+                audience_level='intermediate',
+            )
+
+            raw = (ai_resp.get('text') if isinstance(ai_resp, dict) else str(ai_resp)) or ""
+            raw = raw.strip()
+
+            # Remove accidental markdown fences
+            raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+            raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
+
+            try:
+                parsed = json.loads(raw)
+                return parsed
+            except Exception:
+                return {"report": raw}
+
+        except Exception as e:
+            logger.error(f"Error generating architecture analysis: {str(e)}")
+            return {"error": str(e), "report": ""}
     
-    def analyze_control_flow(self, code_text: str) -> str:
+    def analyze_control_flow(self, code_text: str) -> Dict:
         """
         Generate control flow analysis for uploaded code.
         
@@ -409,7 +501,13 @@ Please answer the question using ONLY the context provided above. If the answer 
         Returns:
             str: Control flow analysis report
         """
-        pass
+        # Delegate to analyze_architecture with a control-flow focus to avoid
+        # duplicated functionality while preserving the public API.
+        try:
+            return self.analyze_architecture(code_text, focus='control_flow')
+        except Exception as e:
+            logger.error(f"Error running control flow analysis: {str(e)}")
+            return {"error": str(e), "report": ""}
 
 if __name__ == "__main__":
     import os
