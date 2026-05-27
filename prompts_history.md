@@ -184,3 +184,6 @@
 ### 27-05-2026 19:10
 - **Prompt**: no i want minimum changes and something that works well.do not overdo it. keep it short and simple for now so that I can understand how everything is working.
 
+### 27-05-2026 19:25
+- **Prompt**: What should I keep in mind when crafting a good prompt for review_code? what are your suggestions?
+
