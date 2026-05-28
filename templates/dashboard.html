@@ -463,7 +463,7 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    this.currentQuiz = data.quiz;
+                    this.currentQuiz = data.quiz_id;
                     this.currentQuizQuestions = data.questions || [];
                     this.showQuizForm();
                 } else {
@@ -497,10 +497,10 @@
 
                 let questionHtml = `
                     <div class="question-number">Question ${index + 1} of ${this.currentQuizQuestions.length}</div>
-                    <div class="question-text">${question.question_text}</div>
+                    <div class="question-text">${question.question}</div>
                 `;
 
-                if (question.question_type === 'multiple_choice' && question.options) {
+                if (question.type === 'multiple_choice' && question.options) {
                     const letters = ['A', 'B', 'C', 'D'];
                     questionHtml += '<div class="options-list">';
                     question.options.forEach((option, optIndex) => {
@@ -547,7 +547,7 @@
             let allAnswered = true;
 
             this.currentQuizQuestions.forEach(question => {
-                if (question.question_type === 'multiple_choice') {
+                if (question.type === 'multiple_choice') {
                     const radio = formDiv.querySelector(`input[name="answer_${question.id}"]:checked`);
                     if (radio) {
                         answers[question.id] = radio.value;
@@ -574,7 +574,7 @@
                 const response = await fetch('/submit-answer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quiz_id: this.currentQuiz.id, answers: answers })
+                    body: JSON.stringify({ quiz_id: this.currentQuiz, answers: answers })
                 });
 
                 const data = await response.json();
@@ -644,10 +644,10 @@
                     <div class="review-icon">${isCorrect ? '✅' : '❌'}</div>
                     <div class="review-content">
                         <div class="review-q-num">Question ${index + 1}</div>
-                        <div class="review-q-text">${question.question_text}</div>
+                        <div class="review-q-text">${question.question}</div>
                 `;
 
-                if (question.question_type === 'multiple_choice' && question.options) {
+                if (question.type === 'multiple_choice' && question.options) {
                     const letters = ['A', 'B', 'C', 'D'];
                     reviewHtml += '<div class="review-options">';
                     question.options.forEach((option, optIndex) => {

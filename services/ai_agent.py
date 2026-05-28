@@ -354,7 +354,7 @@ DOCUMENT:
             audience_level (str): Target audience
             
         Returns:
-            list: Validated quiz question dictionaries with 'question', 'answers', and 'correct_index' keys
+            list: Validated quiz question dictionaries with required keys for database storage
         """
         prompt = f"""You are an expert instructor. Create exactly {num_questions} quiz questions using ONLY the document context below.
 Audience level: {audience_level}.
@@ -362,9 +362,10 @@ Audience level: {audience_level}.
 Output requirements:
 - Return ONLY a JSON array (no explanation, no markdown fences).
 - Each item must be an object with:
-  - "question": string
-  - "answers": array of strings (2-5 options)
-  - "correct_index": integer (index into answers, 0-based)
+  - "question": string (the question text)
+  - "options": array of strings (2-5 answer options)
+  - "correct_index": integer (0-based index of correct answer in options array)
+  - "explanation": string (brief explanation of why this answer is correct)
 - Keep questions and each answer <= 2 short sentences.
 
 DOCUMENT:
@@ -401,8 +402,9 @@ DOCUMENT:
                     continue
 
                 q = item.get('question') or item.get('q')
-                opts = item.get('answers') or item.get('options') or item.get('choices')
+                opts = item.get('options') or item.get('answers') or item.get('choices')
                 corr = item.get('correct_index')
+                expl = item.get('explanation', '')
 
                 if not q or not isinstance(opts, list) or len(opts) < 2:
                     continue
@@ -414,18 +416,22 @@ DOCUMENT:
 
                 # normalize correct index if present and valid
                 correct_index = None
+                correct_answer = ''
                 try:
                     if corr is not None:
                         ci = int(corr)
                         if 0 <= ci < len(opts_norm):
                             correct_index = ci
+                            correct_answer = opts_norm[ci]
                 except Exception:
                     correct_index = None
 
                 validated.append({
                     'question': str(q).strip(),
-                    'answers': opts_norm,
-                    'correct_index': correct_index
+                    'type': 'multiple_choice',
+                    'options': opts_norm,
+                    'correct_answer': correct_answer,
+                    'explanation': str(expl).strip() if expl else ''
                 })
 
             if not validated:
@@ -435,7 +441,7 @@ DOCUMENT:
 
         except Exception as e:
             logger.error(f"Error generating quiz: {str(e)}")
-            return [{"question": "Could not generate the quiz.", "answers": [str(e)], "correct_index": None}]
+            return [{"question": "Could not generate the quiz.", "type": "multiple_choice", "options": [str(e)], "correct_answer": "", "explanation": ""}]
         
     def review_code(self, code_text: str, audience_level: str = "intermediate") -> str:
         """
