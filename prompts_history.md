@@ -317,3 +317,6 @@
 ### 28-05-2026 13:21
 - **Prompt**: the ai works now however it still cannot read the files. Make it so that the ai pulls the contents of the selected document and processes it to answer questions. The ai should be able to read the contents of the file. Also, make the settings tab fully functional and have an effect on how the ai behaves
 
+### 28-05-2026 13:57
+- **Prompt**: when a file is uploaded make the ai process it and learn the information inside of it. Modify the code in this project to properly open and read documents such as txt files and pdf. Eradicate the error document cannot be retrieved. Also please make the quiz generation fully functional
+
