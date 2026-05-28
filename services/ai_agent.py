@@ -273,47 +273,41 @@ Answer in a friendly, conversational way. Use the document context as the primar
         """
         Generate flashcard QA pairs from document context.
         
-        PHASE 2 TODO: Implement this function
-        
         Args:
             context (str): Document text to generate cards from
             num_cards (int): Number of cards to generate
             audience_level (str): Target audience
             
-        Yields:
-            str: JSON-formatted QA pairs
+        Returns:
+            list: Validated flashcard dictionaries with 'question' and 'answer' keys
         """
-        prompt = f"""
-        You are an expert tutor. Create exactly {num_cards} flashcards using ONLY the document context below.
-        Audience level: {audience_level}.
+        prompt = f"""You are an expert tutor. Create exactly {num_cards} flashcards using ONLY the document context below.
+Audience level: {audience_level}.
 
-        Requirements:
-        - Return a JSON array only, no extra text or markdown fences.
-        - Each array item must be an object with keys: "question" and "answer".
-        - Keep each answer concise (1-3 short sentences).
+Requirements:
+- Return a JSON array only, no extra text or markdown fences.
+- Each array item must be an object with keys: "question" and "answer".
+- Keep each answer concise (1-3 short sentences).
 
-        DOCUMENT:
-        {context}
-        """
+DOCUMENT:
+{context}"""
 
         try:
-            ai_resp = self.generate_response(
-                prompt,
-                context,
-                temperature=0.5,
-                top_p=0.9,
-                max_tokens=2000,
-                audience_level=audience_level,
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.5,
+                    top_p=0.9,
+                    max_output_tokens=2000,
+                ),
             )
 
-            # Consume the generator to get the full response
-            raw = ""
-            if isinstance(ai_resp, dict):
-                raw = ai_resp.get('text', '')
-            else:
-                for chunk in ai_resp:
-                    raw += chunk
-            raw = raw.strip()
+            # Extract text from response
+            raw = response.text.strip() if hasattr(response, 'text') else ""
+            
+            if not raw:
+                raise ValueError("Empty response from model")
 
             # Remove accidental markdown fences the model may include
             raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
@@ -354,50 +348,44 @@ Answer in a friendly, conversational way. Use the document context as the primar
         """
         Generate quiz questions from document context.
         
-        PHASE 2 TODO: Implement this function
-        
         Args:
             context (str): Document text to generate questions from
             num_questions (int): Number of questions to generate
             audience_level (str): Target audience
             
-        Yields:
-            str: JSON-formatted quiz questions with MC options
+        Returns:
+            list: Validated quiz question dictionaries with 'question', 'answers', and 'correct_index' keys
         """
-        prompt = f"""
-        You are an expert instructor. Create exactly {num_questions} quiz questions using ONLY the document context below.
-        Audience level: {audience_level}.
+        prompt = f"""You are an expert instructor. Create exactly {num_questions} quiz questions using ONLY the document context below.
+Audience level: {audience_level}.
 
-        Output requirements:
-        - Return ONLY a JSON array (no explanation, no markdown fences).
-        - Each item must be an object with:
-          - "question": string
-          - "answers": array of strings (2-5 options)
-          - optional: "correct_index": integer (index into answers)
-        - Keep questions and each answer <= 2 short sentences.
+Output requirements:
+- Return ONLY a JSON array (no explanation, no markdown fences).
+- Each item must be an object with:
+  - "question": string
+  - "answers": array of strings (2-5 options)
+  - "correct_index": integer (index into answers, 0-based)
+- Keep questions and each answer <= 2 short sentences.
 
-        DOCUMENT:
-        {context}
-        """
+DOCUMENT:
+{context}"""
 
         try:
-            ai_resp = self.generate_response(
-                prompt,
-                context,
-                temperature=0.5,
-                top_p=0.9,
-                max_tokens=2000,
-                audience_level=audience_level,
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.5,
+                    top_p=0.9,
+                    max_output_tokens=2000,
+                ),
             )
 
-            # Consume the generator to get the full response
-            raw = ""
-            if isinstance(ai_resp, dict):
-                raw = ai_resp.get('text', '')
-            else:
-                for chunk in ai_resp:
-                    raw += chunk
-            raw = raw.strip()
+            # Extract text from response
+            raw = response.text.strip() if hasattr(response, 'text') else ""
+            
+            if not raw:
+                raise ValueError("Empty response from model")
 
             # Remove accidental markdown fences
             raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
