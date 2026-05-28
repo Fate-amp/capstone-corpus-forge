@@ -320,3 +320,6 @@
 ### 28-05-2026 13:57
 - **Prompt**: when a file is uploaded make the ai process it and learn the information inside of it. Modify the code in this project to properly open and read documents such as txt files and pdf. Eradicate the error document cannot be retrieved. Also please make the quiz generation fully functional
 
+### 28-05-2026 14:04
+- **Prompt**: Try Again
+
