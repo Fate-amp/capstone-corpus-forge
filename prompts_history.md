@@ -314,3 +314,6 @@
 ### 28-05-2026 13:03
 - **Prompt**: I am getting a server error 503. please fix it and make sure it can never happen again. also make the chat work properly. the ai should be having a conversation with the user. The ai should friendly and conversational. the ai should be able to respond to more than one prompt. Do not explain what youre doing to me just do it.
 
+### 28-05-2026 13:21
+- **Prompt**: the ai works now however it still cannot read the files. Make it so that the ai pulls the contents of the selected document and processes it to answer questions. The ai should be able to read the contents of the file. Also, make the settings tab fully functional and have an effect on how the ai behaves
+
