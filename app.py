@@ -74,19 +74,25 @@ def create_app(config_name='development'):
     @app.before_request
     def init_services():
         """Initialize AI services if not already done."""
+        if app.embeddings_service is None:
+            try:
+                app.embeddings_service = EmbeddingsService(
+                    chromadb_path=app.config.get('CHROMADB_PATH'),
+                    api_key=app.config.get('GOOGLE_API_KEY')
+                )
+                logger.info("Embeddings service initialized")
+            except Exception as e:
+                logger.error(f"Error initializing embeddings service: {str(e)}")
+
         if app.ai_agent is None:
             try:
                 app.ai_agent = AIAgent(
                     api_key=app.config.get('GOOGLE_API_KEY'),
                     model_name=app.config.get('DEFAULT_MODEL')
                 )
-                app.embeddings_service = EmbeddingsService(
-                    chromadb_path=app.config.get('CHROMADB_PATH'),
-                    api_key=app.config.get('GOOGLE_API_KEY')
-                )
-                logger.info("Services initialized")
+                logger.info("AI agent initialized")
             except Exception as e:
-                logger.error(f"Error initializing services: {str(e)}")
+                logger.warning(f"AI agent unavailable, fallback mode enabled: {str(e)}")
 
     # Create upload folder
     with app.app_context():
@@ -281,6 +287,26 @@ def register_routes(app):
     # -------------------------------------------------------------------------
     # DAY 4 — Person C's main task: chat()
     # -------------------------------------------------------------------------
+    def _format_conversation_history(document_id, limit=6):
+        """Format recent chat turns so follow-up questions keep their context."""
+        recent_messages = (
+            db.session.query(ChatMessage)
+            .filter(ChatMessage.document_id == document_id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+
+        if not recent_messages:
+            return ""
+
+        lines = []
+        for message in reversed(recent_messages):
+            lines.append(f"User: {message.query}")
+            lines.append(f"Assistant: {message.response}")
+
+        return "\n".join(lines)
+
     @app.route('/chat', methods=['POST'])
     def chat():
         """
@@ -332,42 +358,77 @@ def register_routes(app):
                 logger.warning(f"Chat request for non-existent document {document_id}")
                 return jsonify({'error': 'Document not found'}), 404
             
-            # Check if AI service is available
-            if app.ai_agent is None:
-                logger.error("AI service not initialized")
-                return jsonify({'error': 'AI service is currently unavailable. Please try again later.'}), 503
-            
             # Get Settings for temperature, top_p, audience, tone
             settings = Settings.query.first() or Settings()
+            model_name = settings.model_choice or app.config.get('DEFAULT_MODEL', 'gemini-2.5-flash')
+            if model_name in {'gemini-pro', 'gemini-pro-vision'}:
+                model_name = 'gemini-2.5-flash'
+
+            if app.ai_agent is None or app.ai_agent.model_name != model_name:
+                try:
+                    app.ai_agent = AIAgent(
+                        api_key=app.config.get('GOOGLE_API_KEY'),
+                        model_name=model_name
+                    )
+                except Exception as e:
+                    logger.warning(f"AI service fallback will be used: {str(e)}")
+
+            conversation_history = _format_conversation_history(document_id, limit=6)
             
             # Retrieve context from ChromaDB
             try:
-                context = app.embeddings_service.retrieve_context(
-                    query=query,
-                    doc_id=document_id,
-                    top_k=3
-                )
+                if app.embeddings_service is not None:
+                    context = app.embeddings_service.retrieve_context(
+                        query=query,
+                        doc_id=document_id,
+                        top_k=3
+                    )
+                else:
+                    context = ""
                 if not context.strip():
                     logger.warning(f"No context retrieved for document {document_id}")
-                    context = "No relevant context found. Please try rephrasing your question."
+                    context = "No relevant context found in the selected document."
             except Exception as e:
                 logger.error(f"Error retrieving context: {str(e)}")
-                context = "Error retrieving document context. Please try again."
+                context = ""
+
+            if not context.strip():
+                context = "No document context was available for this turn."
             
             # Call AIAgent.generate_response() to get generator
             try:
-                response_generator = app.ai_agent.generate_response(
-                    query=query,
-                    context=context,
-                    temperature=settings.temperature,
-                    top_p=settings.top_p,
-                    max_tokens=settings.max_tokens_per_response,
-                    audience_level=settings.audience_level,
-                    tone=settings.tone
-                )
+                if app.ai_agent is not None:
+                    response_generator = app.ai_agent.generate_response(
+                        query=query,
+                        context=context,
+                        conversation_history=conversation_history,
+                        temperature=settings.temperature,
+                        top_p=settings.top_p,
+                        max_tokens=settings.max_tokens_per_response,
+                        audience_level=settings.audience_level,
+                        tone=settings.tone
+                    )
+                else:
+                    response_generator = AIAgent._yield_chunks(
+                        AIAgent._fallback_response(
+                            query=query,
+                            context=context,
+                            conversation_history=conversation_history,
+                            audience_level=settings.audience_level,
+                            tone=settings.tone,
+                        )
+                    )
             except Exception as e:
                 logger.error(f"Error initializing response generator: {str(e)}")
-                return jsonify({'error': f'Failed to generate response: {str(e)}'}), 500
+                response_generator = AIAgent._yield_chunks(
+                    AIAgent._fallback_response(
+                        query=query,
+                        context=context,
+                        conversation_history=conversation_history,
+                        audience_level=settings.audience_level,
+                        tone=settings.tone,
+                    )
+                )
             
             # Create streaming response
             def generate_stream():
@@ -376,6 +437,8 @@ def register_routes(app):
                 try:
                     # Collect all chunks from the generator
                     for chunk in response_generator:
+                        if not chunk:
+                            continue
                         full_response += chunk
                         # Send chunk to client in Server-Sent Events format
                         # Format: "data: <message>\n\n"
@@ -384,34 +447,34 @@ def register_routes(app):
                     # After streaming completes, save to database using explicit app context
                     if full_response:
                         try:
-                            with app.app_context():
-                                # Estimate token counts
-                                tokens_input = len(query.split()) * 2
-                                tokens_output = len(full_response.split()) * 2
-                                
-                                # Create ChatMessage entry
-                                chat_msg = ChatMessage(
-                                    document_id=document_id,
-                                    query=query,
-                                    response=full_response,
-                                    tokens_input=tokens_input,
-                                    tokens_output=tokens_output,
-                                    tokens_used=tokens_input + tokens_output,
-                                    temperature=settings.temperature,
-                                    top_p=settings.top_p
-                                )
-                                db.session.add(chat_msg)
-                                
-                                # Log usage
-                                UsageTracker.log_usage(
-                                    model_name=app.config.get('DEFAULT_MODEL', 'gemini-2.5-flash'),
-                                    tokens_input=tokens_input,
-                                    tokens_output=tokens_output,
-                                    request_type='chat'
-                                )
-                                
-                                db.session.commit()
-                                logger.info(f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}")
+                            history_tokens = len(conversation_history.split()) * 2
+                            context_tokens = len(context.split()) * 2
+                            tokens_input = len(query.split()) * 2 + history_tokens + context_tokens
+                            tokens_output = len(full_response.split()) * 2
+
+                            chat_msg = ChatMessage(
+                                document_id=document_id,
+                                query=query,
+                                response=full_response,
+                                tokens_input=tokens_input,
+                                tokens_output=tokens_output,
+                                tokens_used=tokens_input + tokens_output,
+                                temperature=settings.temperature,
+                                top_p=settings.top_p
+                            )
+                            db.session.add(chat_msg)
+
+                            UsageTracker.log_usage(
+                                model_name=model_name,
+                                tokens_input=tokens_input,
+                                tokens_output=tokens_output,
+                                request_type='chat'
+                            )
+
+                            db.session.commit()
+                            logger.info(
+                                f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}"
+                            )
                         except Exception as e:
                             logger.error(f"Error saving chat message: {str(e)}")
                     

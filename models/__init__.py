@@ -179,7 +179,7 @@ class Settings(db.Model):
     top_p = Column(Float, default=0.9)
     audience_level = Column(String(50), default='intermediate')  # beginner, intermediate, expert
     tone = Column(String(50), default='friendly')  # formal, casual, technical, friendly
-    model_choice = Column(String(100), default='gemini-pro')
+    model_choice = Column(String(100), default='gemini-2.5-flash')
     max_tokens_per_response = Column(Integer, default=1000)
     system_prompt_override = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

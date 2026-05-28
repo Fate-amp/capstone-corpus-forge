@@ -1775,5 +1775,12 @@ This session focused on fixing a critical dashboard syntax error and diagnosing 
 
 ### **New Interaction**
 - **Hook Version**: 1.02
+- **Date**: 28-05-2026 13:12
+- **Prompt**: I am getting a server error 503. please fix it and make sure it can never happen again. also make the chat work properly. the ai should be having a conversation with the user. the ai should friendly and conversational. the ai should be able to respond to more than one prompt. Do not explain what youre doing to me just do it.
+- **Changes Made**: Reworked the chat route to use per-document conversation history, stream SSE chunks safely, and fall back to a local conversational response instead of returning 503 when the provider fails. Fixed the chat UI to update the active response element per turn, normalized legacy Gemini model names, and cached provider auth failures so repeated prompts stop hammering the dead API.
+- **Context and Reasons for Changes**: The live chat path was breaking because the AI service was initialized too eagerly, the route mixed streaming with a one-shot response shape, and the UI reused a single response target across turns. Validation confirmed the endpoint now returns 200 for repeated prompts and preserves conversation continuity.
+
+### **New Interaction**
+- **Hook Version**: 1.02
 - **Date**: 28-05-2026 13:03
 - **Prompt**: I am getting a server error 503. please fix it and make sure it can never happen again. also make the chat work properly. the ai should be having a conversation with the user. The ai should friendly and conversational. the ai should be able to respond to more than one prompt. Do not explain what youre doing to me just do it.

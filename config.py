@@ -36,7 +36,7 @@ class Config:
     
     # Google GenAI Settings
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-    DEFAULT_MODEL = os.getenv('DEFAULT_MODEL', 'gemini-pro')
+    DEFAULT_MODEL = os.getenv('DEFAULT_MODEL', 'gemini-2.5-flash')
     DEFAULT_TEMPERATURE = float(os.getenv('DEFAULT_TEMPERATURE', 0.7))
     DEFAULT_TOP_P = float(os.getenv('DEFAULT_TOP_P', 0.9))
     

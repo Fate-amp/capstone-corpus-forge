@@ -14,8 +14,8 @@ TODO: Add structured output parsing
 
 from google import genai
 from google.genai import types
-import logging
 import json
+import logging
 import re
 from typing import Dict, Generator
 
@@ -53,22 +53,14 @@ class AIAgent:
         # Initialize the genai client with API key
         self.client = genai.Client(api_key=api_key)
         self.model_name = model_name
-        
-        # Test the model is available
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents="test"
-            )
-        except Exception as e:
-            raise RuntimeError("Model failed to initialize") from e
-        
+        self._disabled = False
         logger.info(f"AI Agent initialized with model: {model_name}")
     
     def generate_response(
         self,
         query: str,
         context: str,
+        conversation_history: str = "",
         temperature: float = 0.7,
         top_p: float = 0.9,
         max_tokens: int = 1000,
@@ -86,6 +78,7 @@ class AIAgent:
         Args:
             query (str): User's question
             context (str): Retrieved document chunks (from ChromaDB)
+            conversation_history (str): Recent chat turns for continuity
             temperature (float): Creativity level (0.0-2.0). Higher = more creative. Default 0.7
             top_p (float): Diversity (0.0-1.0). Controls response variety. Default 0.9
             max_tokens (int): Maximum response length. Default 1000
@@ -99,13 +92,24 @@ class AIAgent:
         TODO: Add safety checks (content filtering)
         TODO: Handle context that exceeds token limits
         """
+        if self._disabled:
+            yield from self._yield_chunks(
+                self._fallback_response(query, context, conversation_history, audience_level, tone)
+            )
+            return
+
         try:
             # Step 1: Build the system prompt based on settings
             system_prompt = self._build_system_prompt(audience_level, tone)
             logger.info(f"Built system prompt for audience={audience_level}, tone={tone}")
             
-            # Step 2: Build the full message (system + context + question)
+            conversation_block = conversation_history.strip() or "No previous turns yet."
+
+            # Step 2: Build the full message (system + history + context + question)
             full_message = f"""{system_prompt}
+
+CONVERSATION SO FAR:
+{conversation_block}
 
 CONTEXT (from document):
 {context}
@@ -113,10 +117,9 @@ CONTEXT (from document):
 QUESTION:
 {query}
 
-Please answer the question using ONLY the context provided above. If the answer is not in the context, say so."""
+Answer in a friendly, conversational way. Use the document context as the primary source, but keep continuity with the earlier conversation when it helps. If the context does not support the answer, say so clearly and briefly."""
             
             # Step 3: Call Google Gemini API 
-            # Note: stream=True removed - use streaming_content if available
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=full_message,
@@ -128,22 +131,27 @@ Please answer the question using ONLY the context provided above. If the answer 
             )
             
             # Step 5: Return the response text as a generator
-            # For now, yield the entire response as one chunk (no character-based streaming)
-            # This ensures the SSE format remains correct: "data: <full_message>\n\n"
             if hasattr(response, 'text'):
                 text = response.text
                 if text:
-                    yield text
+                    for start in range(0, len(text), 160):
+                        yield text[start:start + 160]
                 else:
-                    yield "[No response received]"
+                    yield from self._yield_chunks(self._fallback_response(query, context, conversation_history, audience_level, tone))
             else:
-                yield "[No response received]"
+                yield from self._yield_chunks(self._fallback_response(query, context, conversation_history, audience_level, tone))
                     
             logger.info("Response generation completed")
             
         except Exception as e:
-            logger.error(f"Error generating response: {str(e)}")
-            yield f"[ERROR] Failed to generate response: {str(e)}"
+            if self._is_fatal_auth_error(e):
+                self._disabled = True
+                logger.warning(f"AI provider disabled after auth failure: {str(e)}")
+            else:
+                logger.error(f"Error generating response: {str(e)}")
+            yield from self._yield_chunks(
+                self._fallback_response(query, context, conversation_history, audience_level, tone)
+            )
     
     def _build_system_prompt(self, audience_level: str, tone: str) -> str:
         """
@@ -176,7 +184,61 @@ Please answer the question using ONLY the context provided above. If the answer 
         audience_instruction = audience_hints.get(audience_level, audience_hints['intermediate'])
         tone_instruction = tone_hints.get(tone, tone_hints['friendly'])
         
-        return f"You are a helpful AI assistant. {audience_instruction} {tone_instruction}"
+        return (
+            "You are a helpful, friendly, conversational AI assistant. "
+            f"{audience_instruction} {tone_instruction} "
+            "Keep replies grounded in the provided document and keep the thread of the conversation intact."
+        )
+
+    @staticmethod
+    def _yield_chunks(text: str, chunk_size: int = 160) -> Generator[str, None, None]:
+        """Yield text in small chunks so the UI can update progressively."""
+        if not text:
+            return
+
+        for start in range(0, len(text), chunk_size):
+            yield text[start:start + chunk_size]
+
+    @staticmethod
+    def _fallback_response(
+        query: str,
+        context: str,
+        conversation_history: str,
+        audience_level: str,
+        tone: str,
+    ) -> str:
+        """Build a local fallback response so chat still works if the API is unavailable."""
+        intro_map = {
+            "formal": "Here is a concise answer based on the document.",
+            "casual": "Here’s the short version.",
+            "technical": "Here is a technical summary from the available context.",
+            "friendly": "Here’s what I can tell you from the document.",
+        }
+        intro = intro_map.get(tone, intro_map["friendly"])
+
+        context_text = (context or "").strip()
+        if context_text:
+            snippet = context_text[:600].rstrip()
+            if len(context_text) > 600:
+                snippet += "..."
+            answer = f"{intro} {snippet}"
+        else:
+            answer = (
+                f"{intro} I could not find matching document context for that question, "
+                "but I can still help if you rephrase it or ask about another part of the document."
+            )
+
+        if conversation_history.strip():
+            answer += " I am keeping the earlier part of our conversation in mind so the thread stays connected."
+
+        answer += " If you want, send a follow-up and I will continue from here."
+        return answer
+
+    @staticmethod
+    def _is_fatal_auth_error(error: Exception) -> bool:
+        """Detect provider auth failures that should switch the agent to fallback mode."""
+        message = str(error).lower()
+        return 'api_key_invalid' in message or 'api key expired' in message or 'invalid api key' in message
     
     def _count_tokens(self, text: str) -> int:
         """

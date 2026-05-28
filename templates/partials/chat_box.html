@@ -78,6 +78,7 @@
     const chatHistory = document.getElementById('chat-history');
     const loadingIndicator = document.getElementById('chat-loading');
     const selectedDocIdInput = document.getElementById('selected-doc-id');
+    let activeAIResponseElement = null;
     
     console.log('[INIT] DOM elements found:', {
         chatForm: !!chatForm,
@@ -157,20 +158,21 @@
     function addAIMessage() {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message ai';
-        messageDiv.id = 'current-response';
         
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        messageDiv.innerHTML = `
-            <div class="chat-message-content">
-                <div id="response-text"></div>
-                <div class="chat-message-time">${timestamp}</div>
-            </div>
+        const responseText = document.createElement('div');
+        responseText.className = 'chat-message-content';
+        responseText.innerHTML = `
+            <div class="chat-response-text"></div>
+            <div class="chat-message-time">${timestamp}</div>
         `;
         
+        messageDiv.appendChild(responseText);
+        
         chatHistory.appendChild(messageDiv);
+        activeAIResponseElement = messageDiv.querySelector('.chat-response-text');
         console.log('[DEBUG] AI message added to DOM', messageDiv);
-        console.log('[DEBUG] response-text element exists:', !!document.getElementById('response-text'));
+        console.log('[DEBUG] response text element exists:', !!activeAIResponseElement);
         return messageDiv;
     }
     
@@ -178,17 +180,15 @@
      * Append text to the current AI response
      */
     function appendToAIResponse(text) {
-        const responseText = document.getElementById('response-text');
         console.log('[DEBUG] appendToAIResponse called with text:', text.substring(0, 50));
-        console.log('[DEBUG] response-text element found:', !!responseText);
+        console.log('[DEBUG] response text element found:', !!activeAIResponseElement);
         
-        if (responseText) {
-            responseText.textContent += text;
-            console.log('[DEBUG] Text appended. Current content:', responseText.textContent.substring(0, 100));
+        if (activeAIResponseElement) {
+            activeAIResponseElement.textContent += text;
+            console.log('[DEBUG] Text appended. Current content:', activeAIResponseElement.textContent.substring(0, 100));
             scrollChatToBottom();
         } else {
-            console.error('[ERROR] response-text element not found!');
-            console.error('[ERROR] Searching DOM:', document.body.innerHTML.includes('response-text'));
+            console.error('[ERROR] response text element not found!');
         }
     }
     
@@ -302,6 +302,7 @@
             
             // Step 6: Clear input and show success
             chatInput.value = '';
+            activeAIResponseElement = null;
             showNotification('Response generated successfully', 'success');
             
         } catch (error) {
