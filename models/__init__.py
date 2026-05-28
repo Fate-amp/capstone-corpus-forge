@@ -45,6 +45,7 @@ class Document(db.Model):
     filename = Column(String(255), nullable=False)
     title = Column(String(255), nullable=False)
     content_preview = Column(Text, nullable=True)
+    full_content = Column(Text, nullable=True)  # Store full extracted text for quick retrieval
     file_path = Column(String(512), nullable=False)
     file_type = Column(String(50), nullable=False)  # 'pdf', 'txt', 'py', 'js', etc.
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

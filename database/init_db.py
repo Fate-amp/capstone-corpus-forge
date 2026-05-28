@@ -34,9 +34,14 @@ def init_database():
     print("Initializing database...")
     
     with app.app_context():
+        # Drop all existing tables and recreate (development only)
+        # WARNING: This will delete all data! In production, use Alembic migrations.
+        db.drop_all()
+        print("✓ Dropped existing tables")
+        
         # Create all tables
         db.create_all()
-        print("✓ Database tables created")
+        print("✓ Database tables created with new schema (includes full_content column)")
         
         # Initialize default settings (if not exists)
         if Settings.query.first() is None:

@@ -202,7 +202,8 @@ def register_routes(app):
                 title=title,
                 file_path=filepath,
                 file_type=file_ext,
-                content_preview=preview
+                content_preview=preview,
+                full_content=text  # Store entire extracted content for retrieval
             )
             db.session.add(doc)
             db.session.commit()
@@ -396,15 +397,25 @@ def register_routes(app):
             if not context.strip():
                 try:
                     fallback_doc = Document.query.get(document_id)
-                    if fallback_doc and fallback_doc.content_preview:
-                        # Load full document content from file
-                        if os.path.exists(fallback_doc.file_path):
-                            with open(fallback_doc.file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                                context = f.read()
-                            logger.info(f"Using full document content for doc {document_id}")
+                    if fallback_doc:
+                        # First try: use cached full_content from database
+                        if fallback_doc.full_content:
+                            context = fallback_doc.full_content
+                            logger.info(f"Using cached full content for doc {document_id}")
+                        # Second try: re-extract from file on disk
+                        elif os.path.exists(fallback_doc.file_path):
+                            try:
+                                context = extract_text_by_file_type(
+                                    fallback_doc.file_path,
+                                    fallback_doc.file_type
+                                )
+                                logger.info(f"Re-extracted document content for doc {document_id}")
+                            except Exception as extract_error:
+                                logger.error(f"Could not re-extract document: {str(extract_error)}")
+                                context = fallback_doc.content_preview or ""
                     if not context.strip():
                         logger.warning(f"No context available for document {document_id}")
-                        context = "Document content could not be retrieved."
+                        context = "No document content available. Try uploading the file again."
                 except Exception as e:
                     logger.error(f"Error loading fallback document: {str(e)}")
                     context = "Error retrieving document content."
@@ -658,8 +669,12 @@ def register_routes(app):
                 except Exception as e:
                     logger.warning(f"Could not retrieve context for flashcards: {str(e)}")
 
-            if not context and doc.content_preview:
-                context = doc.content_preview
+            if not context.strip():
+                # Fallback to full content if available, otherwise preview
+                if doc.full_content:
+                    context = doc.full_content
+                elif doc.content_preview:
+                    context = doc.content_preview
 
             # Generate flashcards using AI agent
             cards_data = app.ai_agent.generate_flashcards(
@@ -760,7 +775,7 @@ def register_routes(app):
             settings = Settings.query.first() or Settings()
             audience_level = settings.audience_level or 'intermediate'
 
-            # Retrieve context
+            # Retrieve context: embeddings > full_content > preview
             context = ""
             if app.embeddings_service:
                 try:
@@ -772,8 +787,12 @@ def register_routes(app):
                 except Exception as e:
                     logger.warning(f"Could not retrieve context for quiz: {str(e)}")
 
-            if not context and doc.content_preview:
-                context = doc.content_preview
+            if not context.strip():
+                # Fallback to full content if available, otherwise preview
+                if doc.full_content:
+                    context = doc.full_content
+                elif doc.content_preview:
+                    context = doc.content_preview
 
             # Generate quiz questions using AI agent
             questions_data = app.ai_agent.generate_quiz(
