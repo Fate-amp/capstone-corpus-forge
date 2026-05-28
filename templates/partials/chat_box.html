@@ -48,7 +48,7 @@
             name="query"
             class="chat-input"
             placeholder="Ask a question about the document..."
-            rows="4"
+            rows="2"
             disabled
         ></textarea>
         
@@ -70,12 +70,23 @@
     // Chat Functionality & Document Selection Integration
     // ========================================================================
     
+    console.log('[INIT] Chat box script loading...');
+    
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     const chatHistory = document.getElementById('chat-history');
     const loadingIndicator = document.getElementById('chat-loading');
     const selectedDocIdInput = document.getElementById('selected-doc-id');
+    
+    console.log('[INIT] DOM elements found:', {
+        chatForm: !!chatForm,
+        chatInput: !!chatInput,
+        sendBtn: !!sendBtn,
+        chatHistory: !!chatHistory,
+        loadingIndicator: !!loadingIndicator,
+        selectedDocIdInput: !!selectedDocIdInput
+    });
     
     // ========================================================================
     // Enable/Disable Chat Input Based on Document Selection
@@ -158,6 +169,8 @@
         `;
         
         chatHistory.appendChild(messageDiv);
+        console.log('[DEBUG] AI message added to DOM', messageDiv);
+        console.log('[DEBUG] response-text element exists:', !!document.getElementById('response-text'));
         return messageDiv;
     }
     
@@ -166,9 +179,16 @@
      */
     function appendToAIResponse(text) {
         const responseText = document.getElementById('response-text');
+        console.log('[DEBUG] appendToAIResponse called with text:', text.substring(0, 50));
+        console.log('[DEBUG] response-text element found:', !!responseText);
+        
         if (responseText) {
             responseText.textContent += text;
+            console.log('[DEBUG] Text appended. Current content:', responseText.textContent.substring(0, 100));
             scrollChatToBottom();
+        } else {
+            console.error('[ERROR] response-text element not found!');
+            console.error('[ERROR] Searching DOM:', document.body.innerHTML.includes('response-text'));
         }
     }
     

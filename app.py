@@ -302,10 +302,21 @@ def register_routes(app):
             { "response": "...", "tokens_used": 123 }
         """
         try:
-            # Get query and document_id from request
-            data = request.get_json()
+            # Get query and document_id from request (handle both JSON and form data)
+            if request.is_json:
+                data = request.get_json()
+            else:
+                data = request.form
+            
             query = data.get('query', '').strip()
             document_id = data.get('document_id', None)
+            
+            # Convert document_id to int if it's a string
+            if document_id:
+                try:
+                    document_id = int(document_id)
+                except (ValueError, TypeError):
+                    document_id = None
             
             if not query:
                 logger.warning("Chat request with empty query")
@@ -320,6 +331,11 @@ def register_routes(app):
             if not doc:
                 logger.warning(f"Chat request for non-existent document {document_id}")
                 return jsonify({'error': 'Document not found'}), 404
+            
+            # Check if AI service is available
+            if app.ai_agent is None:
+                logger.error("AI service not initialized")
+                return jsonify({'error': 'AI service is currently unavailable. Please try again later.'}), 503
             
             # Get Settings for temperature, top_p, audience, tone
             settings = Settings.query.first() or Settings()
@@ -365,47 +381,45 @@ def register_routes(app):
                         # Format: "data: <message>\n\n"
                         yield f"data: {chunk}\n\n"
                     
+                    # After streaming completes, save to database using explicit app context
+                    if full_response:
+                        try:
+                            with app.app_context():
+                                # Estimate token counts
+                                tokens_input = len(query.split()) * 2
+                                tokens_output = len(full_response.split()) * 2
+                                
+                                # Create ChatMessage entry
+                                chat_msg = ChatMessage(
+                                    document_id=document_id,
+                                    query=query,
+                                    response=full_response,
+                                    tokens_input=tokens_input,
+                                    tokens_output=tokens_output,
+                                    tokens_used=tokens_input + tokens_output,
+                                    temperature=settings.temperature,
+                                    top_p=settings.top_p
+                                )
+                                db.session.add(chat_msg)
+                                
+                                # Log usage
+                                UsageTracker.log_usage(
+                                    model_name=app.config.get('DEFAULT_MODEL', 'gemini-2.5-flash'),
+                                    tokens_input=tokens_input,
+                                    tokens_output=tokens_output,
+                                    request_type='chat'
+                                )
+                                
+                                db.session.commit()
+                                logger.info(f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}")
+                        except Exception as e:
+                            logger.error(f"Error saving chat message: {str(e)}")
+                    
                 except GeneratorExit:
-                    # Handle client disconnect
                     logger.info("Client disconnected from chat stream")
                 except Exception as e:
                     logger.error(f"Error during streaming: {str(e)}")
                     yield f"data: [ERROR] {str(e)}\n\n"
-                finally:
-                    # After streaming completes, save to database
-                    if full_response:
-                        try:
-                            # Estimate token counts based on response length
-                            tokens_input = len(query.split()) * 2  # Rough estimate: ~2 tokens per word
-                            tokens_output = len(full_response.split()) * 2
-                            
-                            # Create ChatMessage entry
-                            chat_msg = ChatMessage(
-                                document_id=document_id,
-                                query=query,
-                                response=full_response,
-                                tokens_input=tokens_input,
-                                tokens_output=tokens_output,
-                                tokens_used=tokens_input + tokens_output,
-                                temperature=settings.temperature,
-                                top_p=settings.top_p
-                            )
-                            db.session.add(chat_msg)
-                            
-                            # Log usage with UsageTracker
-                            UsageTracker.log_usage(
-                                model_name=app.config.get('DEFAULT_MODEL', 'gemini-pro'),
-                                tokens_input=tokens_input,
-                                tokens_output=tokens_output,
-                                request_type='chat'
-                            )
-                            
-                            # Commit to database
-                            db.session.commit()
-                            logger.info(f"Chat message saved: {tokens_input + tokens_output} tokens, response length: {len(full_response)}")
-                        except Exception as e:
-                            logger.error(f"Error saving chat message: {str(e)}")
-                            db.session.rollback()
             
             return generate_stream(), 200, {
                 'Content-Type': 'text/event-stream',

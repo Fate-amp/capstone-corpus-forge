@@ -2,29 +2,24 @@
    Chat Stream Handler JavaScript
    
    Handles real-time streaming of AI responses using Fetch API.
-   
-   TODO: Day 4 Implementation
-   - Connect to POST /chat endpoint
-   - Handle streaming response chunks
-   - Append to chat display in real-time
-   - Handle errors
-   - Format response with markdown (optional)
 */
 
 /**
  * Stream chat response from server.
  * 
- * TODO: Day 4 - Implement full streaming logic
- * 
- * Steps:
- * 1. Send POST request to /chat with query and document_id
- * 2. Use fetch(...).body.getReader() for streaming
- * 3. Read chunks and decode from Uint8Array
- * 4. Append each chunk to chat display
- * 5. Auto-scroll to latest message
- * 6. Handle end of stream and error cases
+ * Features:
+ * - Sends POST request to /chat
+ * - Streams chunks in real-time
+ * - Updates UI progressively
+ * - Handles errors gracefully
  */
 async function streamChatResponse(query, documentId) {
+    // Add user message immediately
+    appendMessageToChat(query, true);
+
+    // Create empty AI message container for streaming
+    const aiMessageElement = appendMessageToChat('', false);
+
     try {
         const response = await fetch('/chat', {
             method: 'POST',
@@ -36,45 +31,126 @@ async function streamChatResponse(query, documentId) {
                 document_id: documentId
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        // TODO: Day 4 - Handle streaming response
-        // const reader = response.body.getReader();
-        // const decoder = new TextDecoder();
-        // while (true) {
-        //     const { done, value } = await reader.read();
-        //     if (done) break;
-        //     const chunk = decoder.decode(value);
-        //     // Append chunk to chat display
-        // }
-        
-        console.log('Stream response received (TODO: implement)');
+
+        // Ensure streaming is supported
+        if (!response.body) {
+            throw new Error('ReadableStream not supported in this browser.');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let fullResponse = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+
+            // Stream finished
+            if (done) {
+                break;
+            }
+
+            // Decode chunk
+            const chunk = decoder.decode(value, { stream: true });
+
+            // Accumulate full response
+            fullResponse += chunk;
+
+            // Update AI message in real-time
+            aiMessageElement.querySelector('.message-content').textContent =
+                fullResponse;
+
+            // Auto-scroll to bottom
+            const chatHistory = document.getElementById('chat-history');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        console.log('Streaming completed successfully');
+
     } catch (error) {
         console.error('Error streaming response:', error);
+
+        aiMessageElement.querySelector('.message-content').textContent =
+            `Error: ${error.message}`;
+
+        aiMessageElement.classList.add('error-message');
     }
 }
 
 /**
  * Append message to chat history display.
  * 
- * TODO: Create message HTML element and add to chat-history div
+ * Returns the created message element so it can be updated during streaming.
  */
 function appendMessageToChat(message, isUserMessage = false) {
-    // TODO: Day 4 - Implement message appending
-    console.log('Appending message:', message);
+    const chatHistory = document.getElementById('chat-history');
+
+    // Create message element
+    const messageElement = createMessageElement(message, isUserMessage);
+
+    // Add to chat history
+    chatHistory.appendChild(messageElement);
+
+    // Auto-scroll
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    return messageElement;
 }
 
 /**
  * Create message HTML element.
  * 
- * TODO: Format message with proper styling and timestamps
+ * Includes:
+ * - Message styling
+ * - Timestamp
+ * - User/AI distinction
  */
-function createMessageElement(content, isUserMessage = false, timestamp = null) {
-    // TODO: Day 4 - Implement message element creation
+function createMessageElement(
+    content,
+    isUserMessage = false,
+    timestamp = null
+) {
     const messageDiv = document.createElement('div');
-    // ... implement
+
+    // Main message container class
+    messageDiv.classList.add('chat-message');
+
+    // Add role-specific class
+    if (isUserMessage) {
+        messageDiv.classList.add('user-message');
+    } else {
+        messageDiv.classList.add('ai-message');
+    }
+
+    // Create content element
+    const contentDiv = document.createElement('div');
+    contentDiv.classList.add('message-content');
+
+    // Optional markdown rendering
+    // If using marked.js:
+    // contentDiv.innerHTML = marked.parse(content);
+
+    // Plain text fallback
+    contentDiv.textContent = content;
+
+    // Create timestamp
+    const timeDiv = document.createElement('div');
+    timeDiv.classList.add('message-timestamp');
+
+    const messageTime = timestamp || new Date();
+
+    timeDiv.textContent = messageTime.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Assemble message
+    messageDiv.appendChild(contentDiv);
+    messageDiv.appendChild(timeDiv);
+
     return messageDiv;
 }
