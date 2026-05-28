@@ -18,7 +18,7 @@
     - Store settings in database
 -->
 
-<form id="settings-form" method="POST" action="{{ url_for('update_settings') }}">
+<form id="settings-form">
     <div class="form-group">
         <label for="temperature">Temperature (Creativity)</label>
         <div class="slider-group">
@@ -97,25 +97,60 @@
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary btn-block">Save Settings</button>
+        <div id="settings-status" class="settings-status" style="display:none; margin-top: 10px; padding: 8px; border-radius: 4px; text-align: center;"></div>
     </div>
 </form>
 
 <script>
-    // TODO: Day 5 - Implement real-time slider value display
+    const settingsForm = document.getElementById('settings-form');
+    const settingsStatus = document.getElementById('settings-status');
 
+    // Handle form submission
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(settingsForm);
+        const data = {
+            temperature: parseFloat(formData.get('temperature')) || 0.7,
+            top_p: parseFloat(formData.get('top_p')) || 0.9,
+            audience_level: formData.get('audience_level') || 'intermediate',
+            tone: formData.get('tone') || 'friendly',
+            max_tokens_per_response: parseInt(formData.get('max_tokens_per_response')) || 1000,
+            model_choice: formData.get('model_choice') || 'gemini-2.5-flash'
+        };
+        
+        try {
+            const response = await fetch('/update-settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                settingsStatus.textContent = '✓ Settings saved successfully';
+                settingsStatus.style.backgroundColor = '#d4edda';
+                settingsStatus.style.color = '#155724';
+                settingsStatus.style.display = 'block';
+                setTimeout(() => { settingsStatus.style.display = 'none'; }, 3000);
+            } else {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save settings');
+            }
+        } catch (error) {
+            settingsStatus.textContent = '✗ ' + error.message;
+            settingsStatus.style.backgroundColor = '#f8d7da';
+            settingsStatus.style.color = '#721c24';
+            settingsStatus.style.display = 'block';
+        }
+    });
+
+    // Real-time slider value display
     document.getElementById('temperature').addEventListener('input', (e) => {
         document.getElementById('temperature-display').textContent = e.target.value;
     });
     
-    const temperatureSlider = document.getElementById('temperature');
-    const temperatureDisplay = document.getElementById('temperature-display');
-    
     const topPSlider = document.getElementById('top_p');
     const topPDisplay = document.getElementById('top_p-display');
-    
-    temperatureSlider.addEventListener('input', function() {
-        temperatureDisplay.textContent = this.value;
-    });
     
     topPSlider.addEventListener('input', function() {
         topPDisplay.textContent = this.value;

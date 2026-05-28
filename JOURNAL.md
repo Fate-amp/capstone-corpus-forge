@@ -1789,3 +1789,23 @@ This session focused on fixing a critical dashboard syntax error and diagnosing 
 - **Hook Version**: 1.02
 - **Date**: 28-05-2026 13:21
 - **Prompt**: the ai works now however it still cannot read the files. Make it so that the ai pulls the contents of the selected document and processes it to answer questions. The ai should be able to read the contents of the file. Also, make the settings tab fully functional and have an effect on how the ai behaves
+
+### **New Interaction**
+- **Hook Version**: 1.02
+- **Date**: 28-05-2026 13:25
+- **Changes Made**: 
+  1. **Document Reading**: Added fallback mechanism in chat route to read full document content from file system when ChromaDB embeddings fail/aren't available
+  2. **Settings Functionality**: Converted settings panel form to async submission with JSON POST; no page reload; added real-time success/error feedback; settings now properly affect AI behavior (temperature, top_p, audience_level, tone, max_tokens)
+  3. **Settings Integration**: Settings are now read fresh on each chat request from database; changes immediately affect next chat response
+- **Files Modified**: 
+  - `app.py`: Chat route document retrieval logic (lines ~385-410) + Settings initialization (lines ~415-420)
+  - `templates/partials/settings_panel.html`: Form submission JavaScript handler; async fetch to /update-settings with error/success feedback
+- **Context and Reasons for Changes**: 
+  - User reported AI "still cannot read files" - root cause was ChromaDB collections may not be created during embedding failures
+  - Solution: Keep embeddings attempt but fallback to loading full document from disk when collection doesn't exist
+  - Settings tab existed but had no effect on AI - fixed by: (a) reading settings from DB on each chat request, (b) making form async so settings persist without page reload, (c) adding visual feedback so user knows settings were saved
+- **Testing Results**: 
+  - ✓ Settings update returns 200 and saves to database
+  - ✓ Document upload returns 201 with correct document_id
+  - ✓ Chat initiates successfully with uploaded document
+- **Outstanding**: Chat response streaming speed may be affected by large file reading; embeddings should still be created during upload (optimization for future)

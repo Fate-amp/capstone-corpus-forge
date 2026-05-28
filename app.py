@@ -1,4 +1,4 @@
-"""
+"""`
 Flask application factory and main entry point.
 
 Creates and configures the Flask app, sets up routes, and initializes services.
@@ -359,7 +359,12 @@ def register_routes(app):
                 return jsonify({'error': 'Document not found'}), 404
             
             # Get Settings for temperature, top_p, audience, tone
-            settings = Settings.query.first() or Settings()
+            settings = Settings.query.first()
+            if not settings:
+                settings = Settings()
+                db.session.add(settings)
+                db.session.commit()
+            
             model_name = settings.model_choice or app.config.get('DEFAULT_MODEL', 'gemini-2.5-flash')
             if model_name in {'gemini-pro', 'gemini-pro-vision'}:
                 model_name = 'gemini-2.5-flash'
@@ -375,7 +380,8 @@ def register_routes(app):
 
             conversation_history = _format_conversation_history(document_id, limit=6)
             
-            # Retrieve context from ChromaDB
+            # Retrieve context from ChromaDB, fallback to full document content
+            context = ""
             try:
                 if app.embeddings_service is not None:
                     context = app.embeddings_service.retrieve_context(
@@ -383,17 +389,25 @@ def register_routes(app):
                         doc_id=document_id,
                         top_k=3
                     )
-                else:
-                    context = ""
-                if not context.strip():
-                    logger.warning(f"No context retrieved for document {document_id}")
-                    context = "No relevant context found in the selected document."
             except Exception as e:
-                logger.error(f"Error retrieving context: {str(e)}")
-                context = ""
+                logger.warning(f"ChromaDB retrieval failed: {str(e)}")
 
+            # Fallback: use full document content if embeddings failed
             if not context.strip():
-                context = "No document context was available for this turn."
+                try:
+                    fallback_doc = Document.query.get(document_id)
+                    if fallback_doc and fallback_doc.content_preview:
+                        # Load full document content from file
+                        if os.path.exists(fallback_doc.file_path):
+                            with open(fallback_doc.file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                context = f.read()
+                            logger.info(f"Using full document content for doc {document_id}")
+                    if not context.strip():
+                        logger.warning(f"No context available for document {document_id}")
+                        context = "Document content could not be retrieved."
+                except Exception as e:
+                    logger.error(f"Error loading fallback document: {str(e)}")
+                    context = "Error retrieving document content."
             
             # Call AIAgent.generate_response() to get generator
             try:
