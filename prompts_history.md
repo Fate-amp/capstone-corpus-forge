@@ -308,3 +308,6 @@
 ### 27-05-2026 21:54
 - **Prompt**: now I'm seeing my prompt in the page but only a time stamp in the response. Also, minimise the header section by 50% of height and move the tabs flashcards etc to the right of test and make the chatbox smaller so that the response can actually show
 
+### 28-05-2026 12:52
+- **Prompt**: File "c:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\app.py", line 33, in <module>     from config import config   File "c:\Users\Yara\Desktop\Bsc Year 1 25-26\AI for software dev\capstone-project\capstone-corpus-forge\config.py", line 11, in <module>     from dotenv import load_dotenv ModuleNotFoundError: No module named 'dotenv'  install all requirements needed to run app.py
+
